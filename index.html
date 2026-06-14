@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LARA Cosmetics | Beauty Products Sri Lanka</title>
+  <meta name="description" content="LARA Cosmetics - Quality beauty products, lipsticks, skincare, makeup, perfumes at affordable prices in Sri Lanka." />
+  <meta property="og:title" content="LARA Cosmetics | Beauty Products" />
+  <meta property="og:description" content="Quality beauty products at affordable prices." />
+  <meta property="og:image" content="https://yourdomain.com/logo.png" />
+  <meta property="og:url" content="https://yourdomain.com/" />
+  <meta property="og:type" content="website" />
+  <link rel="canonical" href="https://yourdomain.com/" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #fff0f5, #ffe4f0, #f8e0f8);
+      color: #222;
+      overflow-x: hidden;
+      font-family: 'Segoe UI', 'Noto Sans Sinhala', sans-serif;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      padding: 15px 6%;
+      background: rgba(255, 240, 245, 0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 105, 180, 0.2);
+    }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ff1493, #ff69b4, #ff8c00, #ff1493);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    nav { display: flex; align-items: center; gap: 20px; }
+    nav a {
+      text-decoration: none;
+      color: #444;
+      font-weight: 500;
+      transition: 0.3s;
+      font-size: 0.95rem;
+    }
+    nav a:hover { color: #ff69b4; }
+    .cart-btn {
+      background: linear-gradient(90deg, #ff69b4, #ff8c00);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #000;
+      transition: 0.3s;
+      font-size: 0.95rem;
+    }
+    .cart-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+
+    .hero { padding: 60px 6% 40px; text-align: center; }
+    .hero h1 {
+      font-size: clamp(2.5rem, 7vw, 4.5rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #ff1493, #ff69b4, #ff8c00, #ff1493);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p { margin-top: 15px; font-size: 1.15rem; color: #555; }
+
+    .search-box {
+      margin: 30px auto 0;
+      max-width: 650px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .search-box input,
+    .search-box select {
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid #ffb6c1;
+      outline: none;
+      font-size: 1rem;
+      background: white;
+      color: #222;
+    }
+    .search-box input { flex: 1; min-width: 200px; }
+    .search-box select { width: 200px; cursor: pointer; }
+
+    .products { padding: 30px 6% 80px; }
+    .products h2 {
+      text-align: center;
+      font-size: 2.3rem;
+      margin-bottom: 30px;
+      color: #ff69b4;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 25px;
+    }
+    .card {
+      background: rgba(255, 245, 247, 0.85);
+      border: 1px solid #ffb6c1;
+      border-radius: 18px;
+      padding: 16px;
+      transition: 0.3s;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(255, 105, 180, 0.1);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover { transform: translateY(-8px); border-color: #ff69b4; box-shadow: 0 8px 30px rgba(255, 105, 180, 0.2); }
+    .card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 14px;
+      background: #fde;
+    }
+    .card h3 { margin-top: 12px; font-size: 1.15rem; color: #333; font-weight: 700; }
+    .card p { margin-top: 5px; font-size: 0.9rem; color: #555; }
+    .card .price {
+      margin-top: 8px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ff4500;
+    }
+    .card .colours-preview {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .card .mini-colour {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #fff0f5;
+      border: 1px solid #ffb6c1;
+      font-size: 0.7rem;
+      color: #666;
+    }
+    .btn {
+      margin-top: auto;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ff69b4, #ff8c00);
+      color: #000;
+      transition: 0.3s;
+    }
+    .btn:hover { transform: scale(1.03); box-shadow: 0 0 20px rgba(255, 105, 180, 0.4); }
+
+    /* Cart Sidebar */
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 400px;
+      max-width: 95vw;
+      height: 100%;
+      background: rgba(255, 240, 245, 0.97);
+      backdrop-filter: blur(15px);
+      padding: 20px;
+      transition: 0.4s;
+      z-index: 9999;
+      border-left: 1px solid #ffb6c1;
+      overflow-y: auto;
+      color: #222;
+    }
+    .cart-sidebar.active { right: 0; }
+    .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .cart-header h2 { font-size: 1.5rem; color: #ff69b4; }
+    .close-btn { cursor: pointer; font-size: 1.8rem; font-weight: 800; color: #ff69b4; background: none; border: none; }
+    .cart-items { margin-top: 10px; }
+    .cart-item {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #ffb6c1;
+    }
+    .cart-item h4 { font-size: 0.95rem; color: #333; }
+    .cart-item p { font-size: 0.85rem; color: #555; margin-top: 4px; }
+    .cart-controls { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .qty-btn, .remove-btn {
+      background: #ff69b4;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #000;
+      font-size: 0.85rem;
+    }
+    .remove-btn { background: #ff8c00; }
+    .total-box {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid #ffb6c1;
+    }
+    .total-box h3 { font-size: 1.2rem; color: #ff69b4; }
+    .checkout {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid #ffb6c1;
+    }
+    .checkout h3 { color: #ff69b4; margin-bottom: 10px; }
+    .checkout input, .checkout textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ffb6c1;
+      outline: none;
+      background: white;
+      color: #222;
+      font-size: 0.9rem;
+    }
+    .checkout textarea { height: 70px; resize: none; }
+    .order-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ff8c00, #ff69b4);
+      color: #000;
+      transition: 0.3s;
+    }
+    .order-btn:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      width: 92%;
+      max-width: 560px;
+      max-height: 88vh;
+      overflow-y: auto;
+      position: relative;
+      text-align: center;
+    }
+    .close-modal {
+      position: absolute;
+      right: 18px;
+      top: 8px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: #ff69b4;
+      background: none;
+      border: none;
+    }
+    #modalImage { width: 100%; max-height: 320px; object-fit: contain; border-radius: 16px; margin-bottom: 15px; }
+    .modal-price { font-size: 1.8rem; font-weight: 800; color: #ff4500; margin: 10px 0; }
+    .colour-section { margin: 15px 0; text-align: left; }
+    .colour-section h4 { color: #ff69b4; margin-bottom: 10px; }
+    .colour-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .colour-chip {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      border: 2px solid #ffb6c1;
+      background: #fff0f5;
+      color: #333;
+      cursor: pointer;
+      transition: 0.2s;
+      user-select: none;
+    }
+    .colour-chip:hover { background: #ffe4f0; }
+    .colour-chip.selected {
+      border: 3px solid #ff69b4;
+      background: #ffe4f0;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(255, 105, 180, 0.3);
+    }
+    #modalDetails { text-align: left; margin-top: 12px; line-height: 1.7; color: #444; font-size: 0.95rem; }
+
+    footer { padding: 25px; text-align: center; opacity: 0.7; color: #555; font-size: 0.9rem; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 50px;
+      font-weight: 600;
+      z-index: 10001;
+      opacity: 0;
+      transition: opacity 0.4s, bottom 0.4s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; bottom: 50px; }
+    .spinner { text-align: center; padding: 40px; font-size: 1.5rem; color: #ff69b4; }
+
+    @media (max-width: 600px) {
+      .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+      .card img { height: 160px; }
+      .cart-sidebar { width: 95vw; right: -100vw; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><i class="fas fa-spa"></i> LARA</div>
+  <nav>
+    <a href="#products">Shop</a>
+    <a href="#about">About</a>
+    <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-cart"></i> Cart (<span id="cartCount">0</span>)</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Beauty That Shines ✨</h1>
+  <p>Premium Cosmetics Collection | Lipsticks | Skincare | Perfumes | Makeup Kits</p>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="🔍 Search products..." />
+    <select id="categoryFilter">
+      <option value="all">All Categories</option>
+    </select>
+  </div>
+</section>
+
+<section class="products" id="products">
+  <h2>💄 Our Products</h2>
+  <div class="product-grid" id="productGrid">
+    <div class="spinner"><i class="fas fa-spinner fa-spin"></i> Loading products...</div>
+  </div>
+</section>
+
+<section class="hero" id="about" style="padding: 40px 6% 60px;">
+  <h2 style="font-size: 2rem; color: #ff69b4; margin-bottom: 15px;">About LARA Cosmetics 💖</h2>
+  <p style="max-width: 800px; margin: 0 auto; line-height: 1.8; color: #555;">
+    Welcome to <b>LARA Cosmetics</b> — your destination for premium beauty products in Sri Lanka.
+    We offer high-quality lipsticks, skincare essentials, perfumes, and makeup kits at affordable prices.
+    Every product is carefully selected to bring out your natural beauty.
+  </p>
+</section>
+
+<footer>© 2024 LARA Cosmetics. All Rights Reserved. | Made with ❤️ in Sri Lanka</footer>
+
+<!-- Cart Sidebar -->
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="cart-header">
+    <h2><i class="fas fa-shopping-bag"></i> Your Cart</h2>
+    <button class="close-btn" onclick="toggleCart()">✖</button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <p style="opacity: 0.7; text-align: center; margin-top: 20px;">Cart is empty 🛒</p>
+  </div>
+  <div class="total-box">
+    <h3>Total: Rs. <span id="cartTotal">0.00</span></h3>
+  </div>
+  <div class="checkout">
+    <h3>📝 Checkout Details</h3>
+    <input type="text" id="customerName" placeholder="Your Full Name *" required />
+    <input type="tel" id="customerPhone" placeholder="Phone Number (WhatsApp) *" required />
+    <input type="email" id="customerEmail" placeholder="Email Address (optional)" />
+    <textarea id="customerAddress" placeholder="Delivery Address *" required></textarea>
+    <button class="order-btn" onclick="placeOrder()"><i class="fas fa-paper-plane"></i> Place Order via WhatsApp</button>
+  </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal" id="productModal">
+  <div class="modal-content">
+    <button class="close-modal" onclick="closeModal()">×</button>
+    <img id="modalImage" src="" alt="Product Image" />
+    <h2 id="modalName"></h2>
+    <p id="modalCategory" style="color: #888; font-size: 0.9rem;"></p>
+    <div class="modal-price">Rs. <span id="modalPrice">0</span></div>
+    
+    <div class="colour-section">
+      <h4>🎨 Select Colour:</h4>
+      <div id="modalColours" class="colour-chips"></div>
+    </div>
+    
+    <div id="modalDetails" style="margin-top: 15px;"></div>
+    
+    <button class="btn" style="margin-top: 20px;" onclick="addToCartFromModal()">
+      <i class="fas fa-cart-plus"></i> Add to Cart
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  // ==================== FIREBASE CONFIG ====================
+  // ⚠️ REPLACE WITH YOUR FIREBASE CONFIG
+  const firebaseConfig = {
+    apiKey: "AIzaSyAOqKpGbesbgeAfA2J_QGfomjTiY_FIfnA",
+  authDomain: "lara-f5aed.firebaseapp.com",
+  projectId: "lara-f5aed",
+  storageBucket: "lara-f5aed.firebasestorage.app",
+  messagingSenderId: "942336215471",
+  appId: "1:942336215471:web:7971423ac9d4cff776075a"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // ==================== STATE ====================
+  let products = [];
+  let currentProduct = null;
+  let selectedColour = '';
+  let cart = JSON.parse(localStorage.getItem('lara_cart_v2')) || [];
+  let categories = new Set();
+
+  // ==================== DOM ELEMENTS ====================
+  const productGrid = document.getElementById('productGrid');
+  const searchInput = document.getElementById('searchInput');
+  const categoryFilter = document.getElementById('categoryFilter');
+  const cartSidebar = document.getElementById('cartSidebar');
+  const cartCountEl = document.getElementById('cartCount');
+  const cartItemsEl = document.getElementById('cartItems');
+  const cartTotalEl = document.getElementById('cartTotal');
+  const toast = document.getElementById('toast');
+  const modal = document.getElementById('productModal');
+
+  // ==================== FETCH PRODUCTS FROM FIRESTORE ====================
+  async function loadProducts() {
+    productGrid.innerHTML = '<div class="spinner"><i class="fas fa-spinner fa-spin"></i> Loading products...</div>';
+    try {
+      const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
+      products = [];
+      categories = new Set();
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        products.push({ id: doc.id, ...data });
+        if (data.category) categories.add(data.category);
+      });
+
+      // Update category filter dropdown
+      categoryFilter.innerHTML = '<option value="all">🗂 All Categories</option>';
+      [...categories].sort().forEach(cat => {
+        categoryFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+
+      renderProducts();
+    } catch (error) {
+      console.error('Error loading products:', error);
+      productGrid.innerHTML = '<p style="text-align:center;color:#ff4444;font-size:1.2rem;">⚠️ Failed to load products.<br>Please check your connection and refresh.</p>';
+    }
+  }
+
+  // ==================== RENDER PRODUCT GRID ====================
+  function renderProducts() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const selectedCategory = categoryFilter.value;
+
+    let filtered = products.filter(p => {
+      const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm) ||
+                            (p.category || '').toLowerCase().includes(searchTerm) ||
+                            (p.description || '').toLowerCase().includes(searchTerm);
+      const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    if (filtered.length === 0) {
+      productGrid.innerHTML = '<p style="text-align:center;opacity:0.7;font-size:1.1rem;grid-column:1/-1;">😊 No products found. Try a different search.</p>';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(p => {
+      const colours = p.colours || [];
+      const coloursPreview = colours.length > 0
+        ? colours.slice(0, 4).map(c => `<span class="mini-colour">${c}</span>`).join('')
+        : '';
+
+      html += `
+        <div class="card" onclick="openProductModal('${p.id}')">
+          <img src="${p.image || 'https://via.placeholder.com/300x220?text=No+Image'}" 
+               alt="${p.name}" 
+               loading="lazy" 
+               onerror="this.src='https://via.placeholder.com/300x220?text=No+Image'" />
+          <h3>${p.name}</h3>
+          <p><i class="fas fa-tag"></i> ${p.category || 'General'}</p>
+          <div class="price">Rs. ${(p.price || 0).toLocaleString()}</div>
+          ${coloursPreview ? `<div class="colours-preview">${coloursPreview}${colours.length > 4 ? '<span class="mini-colour">+' + (colours.length - 4) + '</span>' : ''}</div>` : ''}
+          <button class="btn" onclick="event.stopPropagation(); quickAddToCart('${p.id}')">
+            <i class="fas fa-cart-plus"></i> Add to Cart
+          </button>
+        </div>
+      `;
+    });
+    productGrid.innerHTML = html;
+  }
+
+  // Debounced search
+  let searchTimeout;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(renderProducts, 300);
+  });
+  categoryFilter.addEventListener('change', renderProducts);
+
+  // ==================== PRODUCT MODAL ====================
+  window.openProductModal = (productId) => {
+    currentProduct = products.find(p => p.id === productId);
+    if (!currentProduct) return;
+
+    document.getElementById('modalImage').src = currentProduct.image || 'https://via.placeholder.com/400x300?text=No+Image';
+    document.getElementById('modalName').textContent = currentProduct.name;
+    document.getElementById('modalPrice').textContent = (currentProduct.price || 0).toLocaleString();
+    document.getElementById('modalCategory').textContent = '📂 ' + (currentProduct.category || 'General');
+    document.getElementById('modalDetails').textContent = currentProduct.description || 'No additional details available.';
+
+    // Render colour chips
+    const coloursDiv = document.getElementById('modalColours');
+    coloursDiv.innerHTML = '';
+    selectedColour = '';
+
+    const colours = currentProduct.colours || [];
+    if (colours.length > 0) {
+      colours.forEach(colour => {
+        const chip = document.createElement('span');
+        chip.className = 'colour-chip';
+        chip.textContent = colour;
+        chip.onclick = () => {
+          document.querySelectorAll('.colour-chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          selectedColour = colour;
+        };
+        coloursDiv.appendChild(chip);
+      });
+    } else {
+      coloursDiv.innerHTML = '<span style="color:#999;font-size:0.9rem;">No colour options</span>';
+    }
+
+    modal.classList.add('show');
+  };
+
+  window.closeModal = () => {
+    modal.classList.remove('show');
+    currentProduct = null;
+    selectedColour = '';
+  };
+
+  // Close modal on outside click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // ==================== CART FUNCTIONS ====================
+  window.quickAddToCart = (productId) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    // If product has colours, open modal for selection
+    if (product.colours && product.colours.length > 0) {
+      openProductModal(productId);
+      showToast('⚠️ Please select a colour');
+      return;
+    }
+
+    addToCart(productId, '');
+  };
+
+  window.addToCartFromModal = () => {
+    if (!currentProduct) return;
+
+    const colours = currentProduct.colours || [];
+    if (colours.length > 0 && !selectedColour) {
+      showToast('⚠️ Please select a colour first!');
+      return;
+    }
+
+    addToCart(currentProduct.id, selectedColour);
+    closeModal();
+  };
+
+  function addToCart(productId, colour) {
+    const existingIndex = cart.findIndex(item => item.productId === productId && item.colour === colour);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += 1;
+    } else {
+      cart.push({
+        productId: productId,
+        colour: colour,
+        quantity: 1
+      });
+    }
+
+    saveCart();
+    renderCart();
+    updateCartCount();
+    showToast('✅ Added to cart!');
+  }
+
+  window.removeFromCart = (index) => {
+    cart.splice(index, 1);
+    saveCart();
+    renderCart();
+    updateCartCount();
+    showToast('🗑 Removed from cart');
+  };
+
+  window.changeQuantity = (index, delta) => {
+    cart[index].quantity += delta;
+    if (cart[index].quantity <= 0) {
+      cart.splice(index, 1);
+    }
+    saveCart();
+    renderCart();
+    updateCartCount();
+  };
+
+  function saveCart() {
+    localStorage.setItem('lara_cart_v2', JSON.stringify(cart));
+  }
+
+  function updateCartCount() {
+    const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+    cartCountEl.textContent = total;
+  }
+
+  function renderCart() {
+    if (cart.length === 0) {
+      cartItemsEl.innerHTML = '<p style="opacity:0.7;text-align:center;margin-top:20px;">🛒 Your cart is empty</p>';
+      cartTotalEl.textContent = '0.00';
+      return;
+    }
+
+    let html = '';
+    let total = 0;
+
+    cart.forEach((item, index) => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return;
+
+      const subtotal = (product.price || 0) * item.quantity;
+      total += subtotal;
+
+      html += `
+        <div class="cart-item">
+          <h4>${product.name}</h4>
+          ${item.colour ? `<p style="font-size:0.8rem;color:#ff69b4;">🎨 Colour: ${item.colour}</p>` : ''}
+          <p>Rs. ${(product.price || 0).toLocaleString()} × ${item.quantity} = <b>Rs. ${subtotal.toLocaleString()}</b></p>
+          <div class="cart-controls">
+            <button class="qty-btn" onclick="changeQuantity(${index}, -1)">➖</button>
+            <span style="font-weight:700;">${item.quantity}</span>
+            <button class="qty-btn" onclick="changeQuantity(${index}, 1)">➕</button>
+            <button class="remove-btn" onclick="removeFromCart(${index})"><i class="fas fa-trash"></i> Remove</button>
+          </div>
+        </div>
+      `;
+    });
+
+    cartItemsEl.innerHTML = html;
+    cartTotalEl.textContent = total.toLocaleString();
+  }
+
+  window.toggleCart = () => {
+    cartSidebar.classList.toggle('active');
+    if (cartSidebar.classList.contains('active')) {
+      renderCart();
+    }
+  };
+
+  // ==================== PLACE ORDER (WhatsApp) ====================
+  window.placeOrder = () => {
+    if (cart.length === 0) {
+      showToast('⚠️ Your cart is empty!');
+      return;
+    }
+
+    const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const address = document.getElementById('customerAddress').value.trim();
+
+    if (!name || !phone || !address) {
+      showToast('⚠️ Please fill Name, Phone & Address');
+      return;
+    }
+
+    // Build order message
+    let message = `🌟 *New Order - LARA Cosmetics* 🌟\n\n`;
+    message += `👤 *Customer:* ${name}\n`;
+    message += `📞 *Phone:* ${phone}\n`;
+    message += `📍 *Address:* ${address}\n`;
+
+    const email = document.getElementById('customerEmail').value.trim();
+    if (email) message += `📧 *Email:* ${email}\n`;
+
+    message += `\n📦 *Order Items:*\n`;
+    let total = 0;
+
+    cart.forEach(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return;
+      const subtotal = (product.price || 0) * item.quantity;
+      total += subtotal;
+      message += `\n• ${product.name}`;
+      if (item.colour) message += ` (${item.colour})`;
+      message += `\n  Rs.${(product.price || 0).toLocaleString()} × ${item.quantity} = *Rs.${subtotal.toLocaleString()}*`;
+    });
+
+    message += `\n\n💰 *Total: Rs. ${total.toLocaleString()}*`;
+    message += `\n\n📅 _Thank you for your order! We will contact you soon._`;
+
+    // Open WhatsApp
+    const whatsappNumber = '94XXXXXXXXX'; // ⚠️ REPLACE WITH YOUR WHATSAPP NUMBER
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+    window.open(whatsappURL, '_blank');
+
+    // Clear cart
+    cart = [];
+    saveCart();
+    renderCart();
+    updateCartCount();
+    document.getElementById('customerName').value = '';
+    document.getElementById('customerPhone').value = '';
+    document.getElementById('customerEmail').value = '';
+    document.getElementById('customerAddress').value = '';
+    toggleCart();
+
+    showToast('✅ Order sent via WhatsApp!');
+  };
+
+  // ==================== TOAST ====================
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // ==================== INIT ====================
+  function init() {
+    loadProducts();
+    renderCart();
+    updateCartCount();
+  }
+
+  init();
+</script>
+
+</body>
+</html>
