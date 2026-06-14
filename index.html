@@ -299,7 +299,7 @@ window.placeOrder=()=>{
   });
   message+=`\n\n💰 *Total: Rs. ${total.toLocaleString()}*`;
   message+=`\n\n📅 _Thank you for your order! We will contact you soon._`;
-  const whatsappNumber='94XXXXXXXXX';
+  const whatsappNumber='94772405094';
   const encodedMessage=encodeURIComponent(message);
   window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`,'_blank');
   cart=[];saveCart();renderCart();updateCartCount();
