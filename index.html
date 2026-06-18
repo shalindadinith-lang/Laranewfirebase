@@ -661,7 +661,7 @@
         let selectedColour = null;
         let cart = JSON.parse(localStorage.getItem('lara_cart_v5')) || [];
         let categoriesSet = new Set();
-        let trainingData = []; // Store trained responses
+        let trainingData = [];
 
         // DOM elements
         const productGrid = document.getElementById('productGrid');
@@ -684,17 +684,15 @@
         // Load training data
         async function loadTrainingData() {
             try {
-                const snap = await db.collection('chatbotTraining')
-                    .orderBy('priority')
-                    .orderBy('usageCount', 'desc')
-                    .get();
+                const snap = await db.collection('chatbotTraining').get();
                 trainingData = [];
                 snap.forEach(doc => {
                     trainingData.push({ id: doc.id, ...doc.data() });
                 });
-                console.log('Training data loaded:', trainingData.length, 'items');
+                console.log('✅ Training data loaded:', trainingData.length, 'items');
             } catch (e) {
-                console.error('Training load error:', e);
+                console.warn('⚠️ Training load error:', e.message);
+                trainingData = [];
             }
         }
 
@@ -943,12 +941,12 @@
             } else { showToast('❌ Email failed. Try again.'); }
         };
 
-        // ==================== IMPROVED CHATBOT WITH TRAINING ====================
+        // ==================== FIXED CHATBOT ====================
         async function getBotReply(userMessage) {
             const lowerMsg = userMessage.toLowerCase();
             
             // Greetings
-            if (lowerMsg.match(/^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening))/)) {
+            if (lowerMsg.match(/^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening)/)) {
                 return "Hello beauty! 👋 I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄";
             }
             
@@ -956,63 +954,71 @@
                 return "You can ask me:\n• 'Show lipsticks'\n• 'Products under Rs.3000'\n• 'Price of [product]'\n• 'Shades of [product]'\n• 'New arrivals'\n• Or anything about beauty products! ✨";
             }
 
-            // Check trained responses with scoring system
-            let bestMatch = null;
-            let highestScore = 0;
+            // ========== TRAINING CHECK (FIXED - NO INDEX ERROR) ==========
+            try {
+                // Simple query without ordering (fix for index error)
+                const trainingSnap = await db.collection('chatbotTraining').get();
+                
+                let bestMatch = null;
+                let highestScore = 0;
 
-            for (const data of trainingData) {
-                let score = 0;
-                
-                // Check keywords
-                (data.keywords || []).forEach(keyword => {
-                    if (lowerMsg.includes(keyword.toLowerCase())) {
-                        score += 3;
-                    }
-                });
-                
-                // Check question words
-                const questionWords = data.question.toLowerCase()
-                    .replace(/[?.,!]/g, '')
-                    .split(' ')
-                    .filter(w => w.length > 2);
+                trainingSnap.forEach(doc => {
+                    const data = doc.data();
+                    let score = 0;
                     
-                questionWords.forEach(word => {
-                    if (lowerMsg.includes(word)) {
-                        score += 1;
+                    // Check keywords (highest weight)
+                    (data.keywords || []).forEach(keyword => {
+                        if (lowerMsg.includes(keyword.toLowerCase())) {
+                            score += 3;
+                        }
+                    });
+                    
+                    // Check question words
+                    const questionWords = data.question.toLowerCase()
+                        .replace(/[?.,!]/g, '')
+                        .split(' ')
+                        .filter(w => w.length > 2);
+                        
+                    questionWords.forEach(word => {
+                        if (lowerMsg.includes(word)) {
+                            score += 1;
+                        }
+                    });
+                    
+                    // Bonus for exact phrase matches
+                    if (lowerMsg.includes(data.question.toLowerCase())) {
+                        score += 5;
+                    }
+                    
+                    // Priority bonus
+                    if (data.priority === 'high') {
+                        score += 2;
+                    }
+                    
+                    if (score > highestScore && score >= 3) {
+                        highestScore = score;
+                        bestMatch = { ...data, id: doc.id };
                     }
                 });
-                
-                // Bonus for exact phrase matches
-                if (lowerMsg.includes(data.question.toLowerCase())) {
-                    score += 5;
+
+                // If trained response found with good score
+                if (bestMatch && highestScore >= 3) {
+                    console.log('✅ Trained response found! Score:', highestScore);
+                    
+                    // Update usage count (non-blocking)
+                    try {
+                        db.collection('chatbotTraining').doc(bestMatch.id).update({
+                            usageCount: firebase.firestore.FieldValue.increment(1)
+                        }).catch(() => {});
+                    } catch(e) {}
+                    
+                    return bestMatch.answer;
                 }
-                
-                if (score > highestScore && score >= 3) {
-                    highestScore = score;
-                    bestMatch = data;
-                }
+            } catch(e) {
+                console.warn('⚠️ Training search failed:', e.message);
             }
 
-            // If trained response found with good score
-            if (bestMatch && highestScore >= 3) {
-                // Update usage count
-                try {
-                    await db.collection('chatbotTraining').doc(bestMatch.id).update({
-                        usageCount: firebase.firestore.FieldValue.increment(1)
-                    });
-                } catch(e) {
-                    console.error('Usage update error:', e);
-                }
-                
-                // Reload training data periodically
-                if (trainingData.length > 0 && Math.random() < 0.1) {
-                    loadTrainingData();
-                }
-                
-                return bestMatch.answer;
-            }
-
-            // Product-related responses (fallback)
+            // ========== PRODUCT-RELATED FALLBACK ==========
             let filtered = [...products];
             
             // Category filtering
@@ -1091,14 +1097,15 @@
                     "No products available at the moment.";
             }
 
-            // Save unanswered question for admin review
+            // ========== SAVE UNANSWERED QUESTION ==========
             try {
                 await db.collection('unansweredQuestions').add({
                     question: userMessage,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                console.log('📝 Saved unanswered question');
             } catch(e) {
-                console.error('Save unanswered error:', e);
+                console.log('⚠️ Save unanswered skipped:', e.message);
             }
 
             return "I'm still learning about that! 🤔\n\nTry asking:\n• 'Show lipsticks under Rs.5000'\n• 'What perfumes do you have?'\n• 'Price of [product name]'\n• 'New arrivals'\n\nI'll save your question and learn from it! 📚";
@@ -1111,7 +1118,6 @@
         function addMessage(text, isUser) {
             const div = document.createElement('div');
             div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
-            // Convert newlines to <br> and bold markdown
             const formattedText = text
                 .replace(/\n/g, '<br>')
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -1130,7 +1136,7 @@
             // Show typing indicator
             const typingDiv = document.createElement('div');
             typingDiv.className = 'message bot-msg';
-            typingDiv.innerHTML = '<div class="bubble"><i class="fas fa-ellipsis-h"></i></div>';
+            typingDiv.innerHTML = '<div class="bubble"><i class="fas fa-circle-notch fa-spin"></i> Thinking...</div>';
             typingDiv.id = 'typingIndicator';
             chatMessagesDiv.appendChild(typingDiv);
             
