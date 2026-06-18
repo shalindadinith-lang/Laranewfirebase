@@ -5,8 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <title>LARA Cosmetics | AI Beauty Assistant</title>
-    <link rel="icon"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23000000'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='60' font-weight='bold' fill='white'%3EL%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23000000'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='60' font-weight='bold' fill='white'%3EL%3C/text%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -161,7 +160,7 @@
                 <div class="message bot-msg"><div class="bubble">✨ Hello! I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄</div></div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="e.g., lipsticks under 3000, shades of matte lipstick..." autocomplete="off">
+                <input type="text" id="chatInput" placeholder="e.g., lipsticks under 3000, delivery options..." autocomplete="off">
                 <button id="sendChatBtn"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
@@ -246,7 +245,9 @@
                 [...categoriesSet].sort().forEach(cat => {
                     categoryFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
                 });
-                if (currentCat) categoryFilter.value = currentCat;
+                if (currentCat && [...categoriesSet].includes(currentCat)) {
+                    categoryFilter.value = currentCat;
+                }
                 renderProducts();
                 updateCartCount();
                 renderCartItems();
@@ -275,20 +276,23 @@
                 const colours = p.colours || [];
                 let previewHtml = '';
                 if (colours.length) {
-                    previewHtml = `<div class="colours-preview">${colours.slice(0,3).map(c => {
-                        const hex = typeof c === 'object' ? c.hex : '#aaa';
-                        const name = typeof c === 'object' ? c.name : c;
-                        return `<span class="mini-colour"><span class="mini-dot" style="background:${hex};"></span>${name}</span>`;
-                    }).join('')}${colours.length > 3 ? `<span class="mini-colour">+${colours.length-3}</span>` : ''}</div>`;
+                    previewHtml = '<div class="colours-preview">' + 
+                        colours.slice(0,3).map(c => {
+                            const hex = typeof c === 'object' ? c.hex : '#aaa';
+                            const name = typeof c === 'object' ? c.name : c;
+                            return '<span class="mini-colour"><span class="mini-dot" style="background:' + hex + ';"></span>' + name + '</span>';
+                        }).join('') + 
+                        (colours.length > 3 ? '<span class="mini-colour">+' + (colours.length-3) + '</span>' : '') + 
+                        '</div>';
                 }
-                html += `<div class="card" onclick="openProductModal('${p.id}')">
-                    <img src="${p.image || 'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image'}" alt="${p.name}" onerror="this.src='https://placehold.co/400x300/f8f8f8/ccc?text=No+Image'">
-                    <h3>${p.name || 'Product'}</h3>
-                    <p><i class="fas fa-tag"></i> ${p.category || 'Beauty'}</p>
-                    <div class="price">Rs. ${(p.price || 0).toLocaleString()}</div>
-                    ${previewHtml}
-                    <button class="btn" onclick="event.stopPropagation();quickAddToCart('${p.id}')"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-                </div>`;
+                html += '<div class="card" onclick="openProductModal(\'' + p.id + '\')">' +
+                    '<img src="' + (p.image || 'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image') + '" alt="' + (p.name || 'Product') + '" onerror="this.src=\'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image\'">' +
+                    '<h3>' + (p.name || 'Product') + '</h3>' +
+                    '<p><i class="fas fa-tag"></i> ' + (p.category || 'Beauty') + '</p>' +
+                    '<div class="price">Rs. ' + (p.price || 0).toLocaleString() + '</div>' +
+                    previewHtml +
+                    '<button class="btn" onclick="event.stopPropagation();quickAddToCart(\'' + p.id + '\')"><i class="fas fa-cart-plus"></i> Add to Cart</button>' +
+                    '</div>';
             });
             productGrid.innerHTML = html;
         }
@@ -322,7 +326,7 @@
                     const hex = typeof colour === 'object' ? colour.hex : '#bcbcbc';
                     const chip = document.createElement('span');
                     chip.className = 'colour-chip';
-                    chip.innerHTML = `<span class="dot" style="background:${hex};"></span>${name}`;
+                    chip.innerHTML = '<span class="dot" style="background:' + hex + ';"></span>' + name;
                     chip.onclick = () => {
                         document.querySelectorAll('.colour-chip').forEach(c => c.classList.remove('selected'));
                         chip.classList.add('selected');
@@ -413,17 +417,16 @@
                 const price = product.price || 0;
                 const subtotal = price * item.quantity;
                 totalCart += subtotal;
-                html += `<div class="cart-item">
-                    <h4 style="font-weight:600;">${product.name}</h4>
-                    ${item.colour ? `<p style="font-size:0.8rem;margin-top:4px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${item.colour.hex};margin-right:6px;"></span>${item.colour.name}</p>` : ''}
-                    <p>Rs. ${price.toLocaleString()} × ${item.quantity} = <strong>Rs. ${subtotal.toLocaleString()}</strong></p>
-                    <div style="display:flex;gap:8px;margin-top:10px;">
-                        <button class="qty-btn" onclick="changeQuantity(${idx},-1)">−</button>
-                        <span style="padding:0 6px;">${item.quantity}</span>
-                        <button class="qty-btn" onclick="changeQuantity(${idx},1)">+</button>
-                        <button class="remove-btn" onclick="removeFromCart(${idx})"><i class="fas fa-trash-alt"></i> Remove</button>
-                    </div>
-                </div>`;
+                html += '<div class="cart-item">' +
+                    '<h4 style="font-weight:600;">' + product.name + '</h4>' +
+                    (item.colour ? '<p style="font-size:0.8rem;margin-top:4px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + item.colour.hex + ';margin-right:6px;"></span>' + item.colour.name + '</p>' : '') +
+                    '<p>Rs. ' + price.toLocaleString() + ' × ' + item.quantity + ' = <strong>Rs. ' + subtotal.toLocaleString() + '</strong></p>' +
+                    '<div style="display:flex;gap:8px;margin-top:10px;">' +
+                    '<button class="qty-btn" onclick="changeQuantity(' + idx + ',-1)">−</button>' +
+                    '<span style="padding:0 6px;">' + item.quantity + '</span>' +
+                    '<button class="qty-btn" onclick="changeQuantity(' + idx + ',1)">+</button>' +
+                    '<button class="remove-btn" onclick="removeFromCart(' + idx + ')"><i class="fas fa-trash-alt"></i> Remove</button>' +
+                    '</div></div>';
             });
             cartItemsEl.innerHTML = html;
             cartTotalEl.textContent = totalCart.toLocaleString();
@@ -465,7 +468,7 @@
                 if (prod) {
                     let subtotal = (prod.price||0) * item.quantity;
                     orderTotal += subtotal;
-                    orderDetails += `• ${prod.name}${item.colour ? ` (${item.colour.name})` : ''} × ${item.quantity} = Rs. ${subtotal.toLocaleString()}\n`;
+                    orderDetails += '• ' + prod.name + (item.colour ? ' (' + item.colour.name + ')' : '') + ' × ' + item.quantity + ' = Rs. ' + subtotal.toLocaleString() + '\n';
                 }
             });
             const success = await sendOrderEmail({ 
@@ -486,12 +489,13 @@
             }
         };
 
-        // ==================== FIXED CHATBOT (SYNTAX ERROR FIXED) ====================
+        // ==================== CHATBOT FUNCTION ====================
         async function getBotReply(userMessage) {
             const lowerMsg = userMessage.toLowerCase();
             
-            // Greetings - FIXED REGEX
-            if (lowerMsg.match(/^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening))/)) {
+            // Greetings - SIMPLE CHECK
+            const greetings = ['hi', 'hello', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening'];
+            if (greetings.some(g => lowerMsg.startsWith(g))) {
                 return "Hello beauty! 👋 I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄";
             }
             
@@ -509,14 +513,12 @@
                     const data = doc.data();
                     let score = 0;
                     
-                    // Check keywords
                     (data.keywords || []).forEach(keyword => {
                         if (lowerMsg.includes(keyword.toLowerCase())) {
                             score += 3;
                         }
                     });
                     
-                    // Check question words
                     const questionWords = data.question.toLowerCase()
                         .replace(/[?.,!]/g, '')
                         .split(' ')
@@ -528,12 +530,10 @@
                         }
                     });
                     
-                    // Exact match bonus
                     if (lowerMsg.includes(data.question.toLowerCase())) {
                         score += 5;
                     }
                     
-                    // Priority bonus
                     if (data.priority === 'high') {
                         score += 2;
                     }
@@ -591,18 +591,18 @@
             }
 
             if (exactProduct && (lowerMsg.includes('price') || lowerMsg.includes('cost') || lowerMsg.includes('how much'))) {
-                return `💰 **${exactProduct.name}** costs Rs. ${(exactProduct.price || 0).toLocaleString()}. ${exactProduct.description || 'Premium quality product.'}`;
+                return '💰 **' + exactProduct.name + '** costs Rs. ' + (exactProduct.price || 0).toLocaleString() + '. ' + (exactProduct.description || 'Premium quality product.');
             }
             
             if (exactProduct && (lowerMsg.includes('shade') || lowerMsg.includes('colour') || lowerMsg.includes('color'))) {
                 const shades = (exactProduct.colours || []).map(c => typeof c === 'object' ? c.name : c).join(', ');
-                return shades ? `🎨 **${exactProduct.name}** available shades: ${shades}.` : `**${exactProduct.name}** has no shade options.`;
+                return shades ? '🎨 **' + exactProduct.name + '** available shades: ' + shades + '.' : '**' + exactProduct.name + '** has no shade options.';
             }
             
             if (exactProduct) {
                 let shadesText = (exactProduct.colours && exactProduct.colours.length) ? 
-                    ` Available shades: ${exactProduct.colours.map(c => typeof c === 'object' ? c.name : c).join(', ')}.` : '';
-                return `✨ **${exactProduct.name}**\n💰 Rs. ${(exactProduct.price||0).toLocaleString()}\n📝 ${exactProduct.description || 'Premium quality.'}${shadesText}\n\nAdd to cart from the shop! 🛒`;
+                    ' Available shades: ' + exactProduct.colours.map(c => typeof c === 'object' ? c.name : c).join(', ') + '.' : '';
+                return '✨ **' + exactProduct.name + '**\n💰 Rs. ' + (exactProduct.price||0).toLocaleString() + '\n📝 ' + (exactProduct.description || 'Premium quality.') + shadesText + '\n\nAdd to cart from the shop! 🛒';
             }
 
             if (lowerMsg.includes('new arrival') || lowerMsg.includes('latest') || lowerMsg.includes('new product')) {
@@ -610,23 +610,23 @@
                     .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
                     .slice(0, 5);
                 return sorted.length ? 
-                    `🆕 **Latest Products:**\n${sorted.map(p => `• ${p.name} - Rs. ${(p.price||0).toLocaleString()}`).join('\n')}` : 
+                    '🆕 **Latest Products:**\n' + sorted.map(p => '• ' + p.name + ' - Rs. ' + (p.price||0).toLocaleString()).join('\n') : 
                     "No new arrivals yet. Check back soon! 🎀";
             }
 
             if (filtered.length > 0 && filtered.length < products.length) {
                 const list = filtered.slice(0, 5).map(p => 
-                    `• **${p.name}** - Rs. ${(p.price||0).toLocaleString()}`
+                    '• **' + p.name + '** - Rs. ' + (p.price||0).toLocaleString()
                 ).join('\n');
-                return `🌸 I found ${filtered.length} product(s):\n${list}${filtered.length > 5 ? '\n...and more!' : ''}\n\nBrowse our shop for details! 💝`;
+                return '🌸 I found ' + filtered.length + ' product(s):\n' + list + (filtered.length > 5 ? '\n...and more!' : '') + '\n\nBrowse our shop for details! 💝';
             }
 
             if (lowerMsg.includes('all product') || lowerMsg.includes('show all') || lowerMsg.includes('what do you have')) {
                 const list = products.slice(0, 8).map(p => 
-                    `• ${p.name} (${p.category || 'Beauty'})`
+                    '• ' + p.name + ' (' + (p.category || 'Beauty') + ')'
                 ).join('\n');
                 return products.length ? 
-                    `🌟 **Our Collection:**\n${list}${products.length > 8 ? `\n...and ${products.length - 8} more!` : ''}\n\nAsk about any product for details! ✨` :
+                    '🌟 **Our Collection:**\n' + list + (products.length > 8 ? '\n...and ' + (products.length - 8) + ' more!' : '') + '\n\nAsk about any product for details! ✨' :
                     "No products available at the moment.";
             }
 
@@ -650,11 +650,11 @@
         
         function addMessage(text, isUser) {
             const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
+            div.className = 'message ' + (isUser ? 'user-msg' : 'bot-msg');
             const formattedText = text
                 .replace(/\n/g, '<br>')
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            div.innerHTML = `<div class="bubble">${formattedText}</div>`;
+            div.innerHTML = '<div class="bubble">' + formattedText + '</div>';
             chatMessagesDiv.appendChild(div);
             chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
         }
