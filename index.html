@@ -11,77 +11,140 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Poppins',sans-serif; background:#ffffff; color:#1a1a1a; overflow-x:hidden; }
-        header { position:sticky; top:0; z-index:999; padding:14px 6%; background:rgba(255,255,255,0.96); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e2e2; }
-        .logo { font-family:'Playfair Display',serif; font-size:2rem; font-weight:800; color:#111; }
-        nav { display:flex; align-items:center; gap:28px; }
-        nav a { text-decoration:none; color:#1e1e1e; font-weight:500; font-size:0.95rem; text-transform:uppercase; }
-        .cart-btn { background:#f0f0f0; border:1px solid #d0d0d0; padding:10px 24px; border-radius:40px; cursor:pointer; font-weight:600; }
-        .cart-badge { background:#2c2c2c; color:white; border-radius:50%; padding:2px 8px; font-size:0.7rem; margin-left:6px; }
-        .hero { padding:70px 6% 35px; text-align:center; }
-        .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(3rem,6vw,5rem); font-weight:800; }
-        .search-box { margin:38px auto 0; max-width:680px; display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
-        .search-box input,.search-box select { padding:14px 22px; border-radius:60px; border:1px solid #cccccc; font-family:'Poppins',sans-serif; }
-        .search-box input { flex:1; min-width:210px; }
-        .products { padding:20px 6% 80px; }
-        .products h2 { text-align:center; font-size:2.2rem; margin-bottom:40px; font-family:'Playfair Display',serif; }
-        .product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:32px; }
-        .card { background:#ffffff; border-radius:24px; padding:20px; cursor:pointer; border:1px solid #eaeaea; transition:0.2s; }
-        .card:hover { transform:translateY(-6px); border-color:#cbcbcb; }
-        .card img { width:100%; height:250px; object-fit:cover; border-radius:20px; background:#f8f8f8; }
-        .card h3 { margin-top:16px; font-weight:700; }
-        .price { font-size:1.35rem; font-weight:700; margin-top:8px; }
-        .colours-preview { margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; }
-        .mini-colour { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:40px; background:#f4f4f4; font-size:0.7rem; }
-        .mini-dot { width:10px; height:10px; border-radius:50%; }
-        .btn { margin-top:18px; width:100%; padding:12px 0; border-radius:40px; background:#111; color:white; font-weight:600; cursor:pointer; border:none; }
-        .modal { display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); justify-content:center; align-items:center; padding:20px; }
-        .modal.show { display:flex; }
-        .modal-content { background:#ffffff; border-radius:32px; padding:28px; max-width:550px; width:90%; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 25px 40px rgba(0,0,0,0.2); }
-        .close-modal { position:absolute; right:20px; top:12px; font-size:2rem; cursor:pointer; background:none; border:none; color:#5a5a5a; transition:0.2s; }
-        .close-modal:hover { color:#000; }
-        #modalImage { width:100%; max-height:280px; object-fit:contain; border-radius:24px; background:#fafafa; margin-bottom:16px; }
-        .modal-price { font-size:1.9rem; font-weight:800; color:#000; margin:8px 0; }
-        .colour-chips { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0; }
-        .colour-chip { display:inline-flex; align-items:center; gap:8px; padding:8px 20px; border-radius:50px; border:1px solid #ccc; background:#f9f9f9; cursor:pointer; transition:0.1s; }
-        .colour-chip.selected { border:2px solid #000; background:#f0f0f0; }
-        .colour-chip .dot { width:18px; height:18px; border-radius:50%; display:inline-block; }
-        .cart-sidebar { position:fixed; top:0; right:-480px; width:460px; max-width:94vw; height:100%; background:#ffffff; padding:24px; transition:0.35s; z-index:9999; overflow-y:auto; border-left:1px solid #e6e6e6; }
-        .cart-sidebar.active { right:0; }
-        .cart-item { background:#fafafa; padding:14px; border-radius:20px; margin-bottom:14px; border:1px solid #ececec; }
-        .qty-btn,.remove-btn { background:#eaeef2; border:none; padding:6px 14px; border-radius:30px; cursor:pointer; font-weight:600; }
-        .total-box { margin-top:18px; padding:16px; background:#f5f5f5; border-radius:24px; }
-        .checkout input,.checkout textarea { width:100%; padding:12px 15px; margin-top:12px; border-radius:60px; border:1px solid #ccc; font-family:'Poppins',sans-serif; }
-        .order-btn { margin-top:18px; width:100%; padding:14px; background:#111; border:none; border-radius:60px; color:white; font-weight:700; cursor:pointer; }
-        #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#1f1f1f; color:#fff; padding:12px 28px; border-radius:60px; opacity:0; transition:0.25s; pointer-events:none; z-index:10001; }
-        #toast.show { opacity:1; bottom:40px; }
-        .chat-widget { position:fixed; bottom:24px; right:24px; z-index:10050; font-family:'Poppins',sans-serif; }
-        .chat-toggle { width:64px; height:64px; background:#111; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,0.2); transition:0.2s; }
-        .chat-toggle i { font-size:28px; color:white; }
-        .chat-toggle:hover { transform:scale(1.05); background:#2c2c2c; }
-        .chat-window { position:absolute; bottom:80px; right:0; width:360px; max-width:85vw; height:500px; background:#ffffff; border-radius:28px; box-shadow:0 20px 35px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden; border:1px solid #e0e0e0; transform:scale(0); transform-origin:bottom right; opacity:0; pointer-events:none; transition:0.2s; }
-        .chat-window.open { transform:scale(1); opacity:1; pointer-events:auto; }
-        .chat-header { background:#111; color:white; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; }
-        .chat-header h4 { font-weight:600; display:flex; align-items:center; gap:8px; }
-        .close-chat { background:none; border:none; color:white; font-size:1.4rem; cursor:pointer; }
-        .chat-messages { flex:1; overflow-y:auto; padding:16px; background:#fcfcfc; display:flex; flex-direction:column; gap:12px; }
-        .message { max-width:85%; font-size:0.85rem; line-height:1.4; }
-        .bot-msg { align-self:flex-start; }
-        .user-msg { align-self:flex-end; }
-        .bubble { padding:10px 14px; border-radius:20px; background:#f0f0f0; color:#111; border-bottom-left-radius:4px; }
-        .user-msg .bubble { background:#111; color:white; border-bottom-right-radius:4px; }
-        .chat-input-area { display:flex; padding:12px; border-top:1px solid #ececec; background:white; gap:8px; }
-        .chat-input-area input { flex:1; padding:12px 14px; border:1px solid #ddd; border-radius:40px; outline:none; font-family:'Poppins',sans-serif; }
-        .chat-input-area button { background:#111; border:none; border-radius:40px; color:white; padding:0 18px; cursor:pointer; font-weight:600; }
-        footer { text-align:center; padding:40px 20px; border-top:1px solid #e0e0e0; }
-        @media (max-width:768px) { .product-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); } .chat-window { width:320px; height:460px; } }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Poppins',sans-serif;background:#fff;color:#1a1a1a;overflow-x:hidden}
+        header{position:sticky;top:0;z-index:999;padding:14px 6%;background:rgba(255,255,255,0.96);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e2e2}
+        .logo{font-family:'Playfair Display',serif;font-size:2rem;font-weight:800;color:#111}
+        nav{display:flex;align-items:center;gap:28px}
+        nav a{text-decoration:none;color:#1e1e1e;font-weight:500;font-size:0.95rem;text-transform:uppercase}
+        .cart-btn{background:#f0f0f0;border:1px solid #d0d0d0;padding:10px 24px;border-radius:40px;cursor:pointer;font-weight:600}
+        .cart-badge{background:#2c2c2c;color:white;border-radius:50%;padding:2px 8px;font-size:0.7rem;margin-left:6px}
+        .hero{padding:70px 6% 35px;text-align:center}
+        .hero h1{font-family:'Playfair Display',serif;font-size:clamp(3rem,6vw,5rem);font-weight:800}
+        .search-box{margin:38px auto 0;max-width:680px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+        .search-box input,.search-box select{padding:14px 22px;border-radius:60px;border:1px solid #ccc;font-family:'Poppins',sans-serif}
+        .search-box input{flex:1;min-width:210px}
+        .products{padding:20px 6% 80px}
+        .products h2{text-align:center;font-size:2.2rem;margin-bottom:40px;font-family:'Playfair Display',serif}
+        .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:32px}
+        .card{background:#fff;border-radius:24px;padding:20px;cursor:pointer;border:1px solid #eaeaea;transition:0.2s}
+        .card:hover{transform:translateY(-6px);border-color:#cbcbcb}
+        .card img{width:100%;height:250px;object-fit:cover;border-radius:20px;background:#f8f8f8}
+        .card h3{margin-top:16px;font-weight:700}
+        .price{font-size:1.35rem;font-weight:700;margin-top:8px}
+        .colours-preview{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+        .mini-colour{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:40px;background:#f4f4f4;font-size:0.7rem}
+        .mini-dot{width:10px;height:10px;border-radius:50%}
+        .btn{margin-top:18px;width:100%;padding:12px 0;border-radius:40px;background:#111;color:white;font-weight:600;cursor:pointer;border:none}
+        .modal{display:none;position:fixed;z-index:10000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);justify-content:center;align-items:center;padding:20px}
+        .modal.show{display:flex}
+        .modal-content{background:#fff;border-radius:32px;padding:28px;max-width:550px;width:90%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 25px 40px rgba(0,0,0,0.2)}
+        .close-modal{position:absolute;right:20px;top:12px;font-size:2rem;cursor:pointer;background:none;border:none;color:#5a5a5a;transition:0.2s}
+        .close-modal:hover{color:#000}
+        #modalImage{width:100%;max-height:280px;object-fit:contain;border-radius:24px;background:#fafafa;margin-bottom:16px}
+        .modal-price{font-size:1.9rem;font-weight:800;color:#000;margin:8px 0}
+        .colour-chips{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+        .colour-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:50px;border:1px solid #ccc;background:#f9f9f9;cursor:pointer;transition:0.1s}
+        .colour-chip.selected{border:2px solid #000;background:#f0f0f0}
+        .colour-chip .dot{width:18px;height:18px;border-radius:50%}
+        .cart-sidebar{position:fixed;top:0;right:-480px;width:460px;max-width:94vw;height:100%;background:#fff;padding:24px;transition:0.35s;z-index:9999;overflow-y:auto;border-left:1px solid #e6e6e6}
+        .cart-sidebar.active{right:0}
+        .cart-item{background:#fafafa;padding:14px;border-radius:20px;margin-bottom:14px;border:1px solid #ececec}
+        .qty-btn,.remove-btn{background:#eaeef2;border:none;padding:6px 14px;border-radius:30px;cursor:pointer;font-weight:600}
+        .total-box{margin-top:18px;padding:16px;background:#f5f5f5;border-radius:24px}
+        .checkout input,.checkout textarea{width:100%;padding:12px 15px;margin-top:12px;border-radius:60px;border:1px solid #ccc;font-family:'Poppins',sans-serif}
+        .checkout textarea{border-radius:20px;resize:vertical}
+        .order-btn{margin-top:18px;width:100%;padding:14px;background:#111;border:none;border-radius:60px;color:white;font-weight:700;cursor:pointer}
+        #toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1f1f1f;color:#fff;padding:12px 28px;border-radius:60px;opacity:0;transition:0.25s;pointer-events:none;z-index:10001}
+        #toast.show{opacity:1;bottom:40px}
+        .chat-widget{position:fixed;bottom:24px;right:24px;z-index:10050;font-family:'Poppins',sans-serif}
+        .chat-toggle{width:64px;height:64px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,0.2);transition:0.2s;position:relative}
+        .chat-toggle i{font-size:28px;color:white}
+        .chat-toggle:hover{transform:scale(1.05);background:#2c2c2c}
+        .chat-widget-close{position:absolute;top:-4px;right:-4px;width:22px;height:22px;background:#e74c3c;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:10}
+        .chat-window{position:absolute;bottom:80px;right:0;width:360px;max-width:85vw;height:500px;background:#fff;border-radius:28px;box-shadow:0 20px 35px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;border:1px solid #e0e0e0;transform:scale(0);transform-origin:bottom right;opacity:0;pointer-events:none;transition:0.2s}
+        .chat-window.open{transform:scale(1);opacity:1;pointer-events:auto}
+        .chat-header{background:#111;color:white;padding:16px 18px;display:flex;justify-content:space-between;align-items:center}
+        .chat-header h4{font-weight:600;display:flex;align-items:center;gap:8px}
+        .close-chat{background:none;border:none;color:white;font-size:1.4rem;cursor:pointer}
+        .chat-messages{flex:1;overflow-y:auto;padding:16px;background:#fcfcfc;display:flex;flex-direction:column;gap:12px}
+        .message{max-width:85%;font-size:0.85rem;line-height:1.4}
+        .bot-msg{align-self:flex-start}
+        .user-msg{align-self:flex-end}
+        .bubble{padding:10px 14px;border-radius:20px;background:#f0f0f0;color:#111;border-bottom-left-radius:4px;word-break:break-word}
+        .user-msg .bubble{background:#111;color:white;border-bottom-right-radius:4px}
+        .chat-input-area{display:flex;padding:12px;border-top:1px solid #ececec;background:white;gap:8px}
+        .chat-input-area input{flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:40px;outline:none;font-family:'Poppins',sans-serif}
+        .chat-input-area button{background:#111;border:none;border-radius:40px;color:white;padding:0 18px;cursor:pointer;font-weight:600}
+        footer{text-align:center;padding:40px 20px;border-top:1px solid #e0e0e0}
+        @media(max-width:768px){.product-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}.chat-window{width:320px;height:460px}}
+
+        /* ===== LIPSTICK FINDER STYLES ===== */
+        .lsf-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:16px}
+        .lsf-overlay.active{opacity:1;pointer-events:auto}
+        .lsf-modal{background:#fff;border-radius:28px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 30px 60px rgba(0,0,0,.35);padding:32px 24px 24px;transform:translateY(20px);transition:transform .3s}
+        .lsf-overlay.active .lsf-modal{transform:translateY(0)}
+        .lsf-close{position:absolute;right:18px;top:14px;font-size:1.8rem;cursor:pointer;background:none;border:none;color:#5a5a5a;transition:.2s;z-index:2}
+        .lsf-close:hover{color:#000;transform:scale(1.1)}
+        .lsf-step-indicator{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:24px;padding:0 10px}
+        .lsf-step{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;background:#e8e8e8;color:#999;transition:all .35s;flex-shrink:0}
+        .lsf-step.completed{background:#111;color:#fff}
+        .lsf-step.active{background:#111;color:#fff;box-shadow:0 0 0 6px rgba(0,0,0,.1)}
+        .lsf-step-line{width:32px;height:2px;background:#e0e0e0;flex-shrink:0}
+        .lsf-step-line.completed{background:#111}
+        .lsf-step-body{min-height:200px}
+        .lsf-step-body h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:8px;color:#111;text-align:center}
+        .lsf-step-body p{text-align:center;font-size:.9rem}
+        .lsf-form-group{margin-bottom:16px}
+        .lsf-form-group label{display:block;font-weight:600;margin-bottom:5px;color:#333;font-size:.85rem;text-align:left}
+        .lsf-form-group input{width:100%;padding:12px 16px;border-radius:50px;border:1px solid #ccc;font-family:'Poppins',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s}
+        .lsf-form-group input:focus{border-color:#111;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
+        .lsf-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:50px;border:none;font-weight:600;font-size:.95rem;cursor:pointer;transition:all .2s;font-family:'Poppins',sans-serif;justify-content:center}
+        .lsf-btn-primary{background:#111;color:#fff;width:100%;margin-top:8px}
+        .lsf-btn-primary:hover{background:#2c2c2c;transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.2)}
+        .lsf-btn-primary:disabled{background:#bbb;cursor:not-allowed;transform:none;box-shadow:none}
+        .lsf-btn-secondary{background:#f0f0f0;color:#111;border:1px solid #ddd}
+        .lsf-btn-secondary:hover{background:#e4e4e4}
+        .lsf-photo-options{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+        .lsf-photo-option{display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 32px;border-radius:20px;border:2px dashed #ccc;background:#fafafa;cursor:pointer;transition:all .25s;font-family:'Poppins',sans-serif;font-weight:500;color:#333;min-width:140px}
+        .lsf-photo-option:hover{border-color:#111;background:#f5f5f5;transform:translateY(-3px)}
+        .lsf-camera-container{text-align:center;margin-top:10px}
+        .lsf-camera-container video{width:100%;max-width:360px;border-radius:20px;border:2px solid #e0e0e0;margin-bottom:12px;background:#000}
+        .lsf-preview-container{text-align:center;margin-top:10px}
+        .lsf-preview-container img{width:100%;max-width:300px;border-radius:20px;border:2px solid #e0e0e0;object-fit:cover;max-height:320px}
+        .lsf-analyzing{text-align:center;padding:20px 0}
+        .lsf-spinner-container{display:flex;flex-direction:column;align-items:center;gap:16px}
+        .lsf-spinner{width:56px;height:56px;border:5px solid #e0e0e0;border-top:5px solid #111;border-radius:50%;animation:lsfSpin .9s linear infinite}
+        @keyframes lsfSpin{to{transform:rotate(360deg)}}
+        .lsf-progress-bar{width:100%;max-width:300px;height:6px;background:#e8e8e8;border-radius:10px;overflow:hidden;margin-top:8px}
+        .lsf-progress-fill{height:100%;background:#111;border-radius:10px;width:0%;transition:width .3s}
+        .lsf-results-header{text-align:center;margin-bottom:20px}
+        .lsf-skin-badge{display:inline-flex;align-items:center;gap:10px;padding:10px 22px;border-radius:50px;background:#f5f5f5;border:1px solid #e0e0e0;margin:6px;font-weight:600;font-size:.9rem}
+        .lsf-skin-dot{width:20px;height:20px;border-radius:50%;border:2px solid #ccc}
+        .lsf-results-grid{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+        .lsf-result-card{display:flex;align-items:center;gap:14px;background:#fafafa;border:1px solid #eaeaea;border-radius:18px;padding:14px;transition:.2s;cursor:pointer}
+        .lsf-result-card:hover{border-color:#cbcbcb;transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
+        .lsf-result-card img{width:72px;height:72px;object-fit:cover;border-radius:14px;flex-shrink:0;background:#f0f0f0}
+        .lsf-result-info{flex:1;min-width:0}
+        .lsf-result-info h4{font-weight:700;font-size:.95rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .lsf-shade-name{font-size:.8rem;color:#666}
+        .lsf-price{font-weight:700;font-size:1rem;margin-top:4px}
+        .lsf-stars{color:#f5a623;font-size:.85rem;letter-spacing:1px}
+        .lsf-score-badge{font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:20px;background:#e8e8e8;color:#555;white-space:nowrap}
+        .lsf-result-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+        .lsf-btn-outline{background:transparent;border:1px solid #ccc;color:#333;padding:8px 16px;border-radius:50px;cursor:pointer;font-weight:600;font-size:.78rem;transition:.2s;font-family:'Poppins',sans-serif}
+        .lsf-btn-outline:hover{background:#f5f5f5;border-color:#111}
+        .lsf-error{text-align:center;padding:20px;color:#c0392b}
+        .lsf-error i{font-size:3rem;display:block;margin-bottom:12px}
+        .hidden{display:none!important}
+        @media(max-width:600px){.lsf-modal{padding:20px 14px 16px;border-radius:22px;max-height:92vh}.lsf-step{width:28px;height:28px;font-size:.7rem}.lsf-step-line{width:20px}.lsf-photo-option{padding:20px 18px;min-width:110px;font-size:.8rem}.lsf-result-card{flex-wrap:wrap}.lsf-result-actions{flex-direction:row;width:100%;justify-content:flex-end}.lsf-result-card img{width:56px;height:56px}}
     </style>
 </head>
 <body>
-
+    <!-- header, hero, products, about, footer, cart sidebar, product modal, toast, chat widget (all unchanged) -->
     <header>
         <div class="logo"><i class="fas fa-feather-alt"></i> LARA</div>
         <nav>
@@ -90,28 +153,24 @@
             <button class="cart-btn" onclick="toggleCart()"><i class="fas fa-shopping-cart"></i> Cart <span class="cart-badge" id="cartCount">0</span></button>
         </nav>
     </header>
-
     <section class="hero">
         <h1>Effortless Elegance</h1>
         <p>Premium Cosmetics • Lipsticks • Skincare • Perfumes — Ask our AI beauty assistant anything!</p>
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 Search for lipstick, perfume, skincare..." />
+            <input type="text" id="searchInput" placeholder="🔍 Search for lipstick, perfume, skincare..." maxlength="200" />
             <select id="categoryFilter"><option value="all">All Categories</option></select>
         </div>
     </section>
-
     <section class="products" id="products">
         <h2>Our Collection</h2>
         <div class="product-grid" id="productGrid">
             <div style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading luxurious products...</div>
         </div>
     </section>
-
     <section id="about" class="hero" style="padding:20px 6% 50px;">
         <h2 style="font-size:2rem;">About LARA Cosmetics</h2>
         <p style="max-width:780px;margin:0 auto;line-height:1.7;">LARA Cosmetics brings you cruelty‑free, high‑performance beauty essentials. Fast delivery across Sri Lanka.</p>
     </section>
-
     <footer>© 2025 LARA Cosmetics. All Rights Reserved. | Made with ❤️ in Sri Lanka</footer>
 
     <!-- Cart Sidebar -->
@@ -124,10 +183,10 @@
         <div class="total-box"><h3>Total: Rs. <span id="cartTotal">0.00</span></h3></div>
         <div class="checkout">
             <h3 style="margin-bottom:4px;">Delivery details</h3>
-            <input type="text" id="customerName" placeholder="Full Name *" />
-            <input type="tel" id="customerPhone" placeholder="WhatsApp Number (optional)" />
-            <input type="email" id="customerEmail" placeholder="Email Address *" />
-            <textarea id="customerAddress" placeholder="Delivery Address *" rows="2"></textarea>
+            <input type="text" id="customerName" placeholder="Full Name *" maxlength="100" autocomplete="name" />
+            <input type="tel" id="customerPhone" placeholder="WhatsApp Number (optional)" maxlength="20" autocomplete="tel" />
+            <input type="email" id="customerEmail" placeholder="Email Address *" maxlength="150" autocomplete="email" />
+            <textarea id="customerAddress" placeholder="Delivery Address *" rows="2" maxlength="300"></textarea>
             <button class="order-btn" onclick="placeOrder()"><i class="fas fa-envelope"></i> Place Order via Email</button>
         </div>
     </div>
@@ -136,7 +195,7 @@
     <div class="modal" id="productModal">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal()">×</button>
-            <img id="modalImage" src="" alt="Product detail" />
+            <img id="modalImage" src="" alt="Product detail" loading="lazy" />
             <h2 id="modalName"></h2>
             <p id="modalCategory" style="color:#5a5a5a;margin-top:4px;"></p>
             <div class="modal-price">Rs. <span id="modalPrice">0</span></div>
@@ -145,29 +204,244 @@
             <button class="btn" style="margin-top:24px;" onclick="addToCartFromModal()"><i class="fas fa-cart-plus"></i> Add to Cart</button>
         </div>
     </div>
-
     <div id="toast"></div>
 
     <!-- Chatbot Widget -->
-    <div class="chat-widget">
-        <div class="chat-toggle" id="chatToggleBtn"><i class="fas fa-robot"></i></div>
+    <div class="chat-widget" id="chatWidget">
+        <div class="chat-toggle" id="chatToggleBtn"><i class="fas fa-robot"></i><span class="chat-widget-close" id="chatWidgetCloseBtn">✕</span></div>
         <div class="chat-window" id="chatWindow">
-            <div class="chat-header">
-                <h4><i class="fas fa-magic"></i> LARA Beauty AI</h4>
-                <button class="close-chat" id="closeChatBtn">✕</button>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="message bot-msg"><div class="bubble">✨ Hello! I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄</div></div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="e.g., lipsticks under 3000, delivery options..." autocomplete="off">
-                <button id="sendChatBtn"><i class="fas fa-paper-plane"></i></button>
-            </div>
+            <div class="chat-header"><h4><i class="fas fa-magic"></i> LARA Beauty AI</h4><button class="close-chat" id="closeChatBtn">✕</button></div>
+            <div class="chat-messages" id="chatMessages"><div class="message bot-msg"><div class="bubble">✨ Hello! I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄</div></div></div>
+            <div class="chat-input-area"><input type="text" id="chatInput" placeholder="e.g., lipsticks under 3000..." maxlength="500" autocomplete="off" /><button id="sendChatBtn"><i class="fas fa-paper-plane"></i></button></div>
         </div>
     </div>
 
+    <!-- Firebase Storage Helper -->
     <script>
-        // Firebase Config
+        const LARA_STORAGE = (function () {
+            let storageAvailable = false, storage = null;
+            try { if (typeof firebase !== 'undefined' && firebase.storage) { storage = firebase.storage(); storageAvailable = true; } } catch(e) {}
+            async function uploadImage(base64Data, folder = 'lipstick-finder/', fileName = null) {
+                if (!fileName) fileName = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2,8);
+                if (folder && !folder.endsWith('/')) folder += '/';
+                const fullPath = folder + fileName + '.jpg';
+                if (!storageAvailable || !storage) return base64Data.length > 500000 ? base64Data.substring(0,500000) : base64Data;
+                try {
+                    const blob = (() => {
+                        let base64Clean = base64, mimeType = 'image/jpeg';
+                        if (base64.startsWith('data:')) {
+                            const matches = base64.match(/^data:([a-zA-Z0-9/+\-.]+);base64,(.+)$/);
+                            if (matches && matches.length === 3) { mimeType = matches[1]; base64Clean = matches[2]; }
+                            else base64Clean = base64.split(',')[1] || base64;
+                        }
+                        const byteChars = atob(base64Clean), byteArrays = [], sliceSize = 512;
+                        for (let offset = 0; offset < byteChars.length; offset += sliceSize) {
+                            const slice = byteChars.slice(offset, offset + sliceSize), byteNumbers = new Array(slice.length);
+                            for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
+                            byteArrays.push(new Uint8Array(byteNumbers));
+                        }
+                        return new Blob(byteArrays, { type: mimeType });
+                    })();
+                    const uploadTask = await storage.ref(fullPath).put(blob, { contentType: 'image/jpeg' });
+                    return await uploadTask.ref.getDownloadURL();
+                } catch(e) { return base64Data.length > 500000 ? base64Data.substring(0,500000) : base64Data; }
+            }
+            async function deleteImage(url) {
+                if (!storageAvailable || !storage || !url) return false;
+                try {
+                    if (url.includes('firebasestorage.googleapis.com')) {
+                        const pathMatch = url.match(/\/o\/(.+?)\?/);
+                        if (pathMatch) { await storage.ref(decodeURIComponent(pathMatch[1])).delete(); return true; }
+                    }
+                    if (url.includes('lipstick-finder/')) { await storage.ref(url).delete(); return true; }
+                    return false;
+                } catch(e) { return false; }
+            }
+            return { uploadImage, deleteImage, isAvailable: () => storageAvailable };
+        })();
+    </script>
+
+    <!-- Lipstick Finder Script -->
+    <script>
+        (function () {
+            'use strict';
+            let currentStep = 1, customerName = '', customerPhone = '', capturedImageData = null;
+            let detectedSkinTone = null, detectedUndertone = null, recommendedProducts = [], cameraStream = null, isInitialized = false;
+            let overlay, modal, stepIndicator, stepContent, closeBtn;
+            const SKIN_TONES = [
+                { name: 'Very Fair', minL: 82, maxL: 100, hex: '#fdf0e3' },
+                { name: 'Fair', minL: 72, maxL: 82, hex: '#f5dcc3' },
+                { name: 'Light', minL: 60, maxL: 72, hex: '#e8c39e' },
+                { name: 'Medium', minL: 46, maxL: 60, hex: '#c89460' },
+                { name: 'Tan', minL: 34, maxL: 46, hex: '#a67044' },
+                { name: 'Deep', minL: 22, maxL: 34, hex: '#6b3f2b' },
+                { name: 'Dark', minL: 0, maxL: 22, hex: '#3d1f14' }
+            ];
+            function init() { if(isInitialized) return; injectModal(); cacheElements(); bindEvents(); injectHeroButton(); isInitialized = true; }
+            function injectModal() {
+                const html = `<div class="lsf-overlay" id="lsfOverlay"><div class="lsf-modal"><button class="lsf-close" id="lsfClose">×</button><div class="lsf-step-indicator" id="lsfStepIndicator"><span class="lsf-step" data-step="1">1</span><span class="lsf-step-line"></span><span class="lsf-step" data-step="2">2</span><span class="lsf-step-line"></span><span class="lsf-step" data-step="3">3</span><span class="lsf-step-line"></span><span class="lsf-step" data-step="4">4</span></div><div class="lsf-step-content" id="lsfStepContent"></div></div></div>`;
+                const container = document.createElement('div'); container.innerHTML = html; document.body.appendChild(container.firstElementChild);
+            }
+            function injectHeroButton() {
+                const heroSection = document.querySelector('.hero'); if(!heroSection || document.getElementById('lsfHeroBtn')) return;
+                const btnContainer = document.createElement('div'); btnContainer.style.cssText = 'text-align:center;margin-top:24px;';
+                btnContainer.innerHTML = `<button id="lsfHeroBtn" class="lsf-btn lsf-btn-primary" style="max-width:380px;width:auto;display:inline-flex;"><i class="fas fa-magic"></i> Find Your Perfect Lipstick Shade ✨</button>`;
+                heroSection.appendChild(btnContainer);
+                document.getElementById('lsfHeroBtn').addEventListener('click', openFinder);
+            }
+            function cacheElements() { overlay = document.getElementById('lsfOverlay'); modal = overlay?.querySelector('.lsf-modal'); stepIndicator = document.getElementById('lsfStepIndicator'); stepContent = document.getElementById('lsfStepContent'); closeBtn = document.getElementById('lsfClose'); }
+            function bindEvents() {
+                if(closeBtn) closeBtn.addEventListener('click', closeFinder);
+                if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) closeFinder(); });
+                document.addEventListener('keydown', e => { if(e.key === 'Escape' && overlay?.classList.contains('active')) closeFinder(); });
+            }
+            function openFinder() { resetState(); overlay?.classList.add('active'); renderStep(1); document.body.style.overflow = 'hidden'; }
+            function closeFinder() { stopCamera(); overlay?.classList.remove('active'); document.body.style.overflow = ''; setTimeout(resetState, 400); }
+            function resetState() { currentStep = 1; customerName = ''; customerPhone = ''; capturedImageData = null; detectedSkinTone = null; detectedUndertone = null; recommendedProducts = []; stopCamera(); }
+            function stopCamera() { if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; } }
+            function renderStep(step) { currentStep = step; updateStepIndicator(step); switch(step) { case 1: renderStep1(); break; case 2: renderStep2(); break; case 3: renderStep3(); break; case 4: renderStep4(); break; } if(modal) modal.scrollTop = 0; }
+            function updateStepIndicator(activeStep) {
+                if(!stepIndicator) return;
+                stepIndicator.querySelectorAll('.lsf-step').forEach((s,i) => { const num = parseInt(s.dataset.step); s.classList.remove('active','completed'); if(num<activeStep) s.classList.add('completed'); if(num===activeStep) s.classList.add('active'); });
+                stepIndicator.querySelectorAll('.lsf-step-line').forEach((l,i) => { l.classList.remove('completed'); if(i+1<activeStep) l.classList.add('completed'); });
+            }
+            function renderStep1() {
+                stepContent.innerHTML = `<div class="lsf-step-body"><h2>✨ Find Your Perfect Lipstick Shade</h2><p style="color:#666;margin-bottom:24px;">Let our AI analyze your skin tone and recommend the best lipsticks for you.</p><div class="lsf-form-group"><label>Full Name *</label><input type="text" id="lsfName" placeholder="Enter your full name" maxlength="100" value="${escapeAttr(customerName)}" /><small id="lsfNameError" style="color:#c0392b;display:none;">Please enter your name.</small></div><div class="lsf-form-group"><label>Phone Number *</label><input type="tel" id="lsfPhone" placeholder="e.g., +94 77 123 4567" maxlength="20" value="${escapeAttr(customerPhone)}" /><small id="lsfPhoneError" style="color:#c0392b;display:none;">Please enter your phone number.</small></div><button class="lsf-btn lsf-btn-primary" id="lsfStep1Next">Continue <i class="fas fa-arrow-right"></i></button></div>`;
+                document.getElementById('lsfStep1Next').addEventListener('click', handleStep1);
+                document.getElementById('lsfName').addEventListener('keypress', e => { if(e.key==='Enter') document.getElementById('lsfPhone').focus(); });
+                document.getElementById('lsfPhone').addEventListener('keypress', e => { if(e.key==='Enter') handleStep1(); });
+                setTimeout(() => document.getElementById('lsfName').focus(), 300);
+            }
+            function handleStep1() {
+                const name = document.getElementById('lsfName').value.trim(), phone = document.getElementById('lsfPhone').value.trim();
+                const nameErr = document.getElementById('lsfNameError'), phoneErr = document.getElementById('lsfPhoneError');
+                let valid = true;
+                if(!name) { nameErr.style.display='block'; valid=false; } else nameErr.style.display='none';
+                if(!phone) { phoneErr.style.display='block'; valid=false; } else phoneErr.style.display='none';
+                if(!valid) return;
+                customerName=name; customerPhone=phone;
+                saveCustomerData(name,phone);
+                renderStep(2);
+            }
+            async function saveCustomerData(name,phone) { try { if(typeof db!=='undefined') await db.collection('lipstickCustomers').add({name,phone,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); } catch(e) {} }
+            function renderStep2() {
+                stepContent.innerHTML = `<div class="lsf-step-body"><h2>📷 Capture Your Photo</h2><p style="color:#666;margin-bottom:16px;">Take a selfie or upload a photo for skin tone analysis.</p><div class="lsf-photo-options" id="lsfPhotoOptions"><button class="lsf-photo-option" id="lsfCameraBtn"><i class="fas fa-camera" style="font-size:2rem;"></i><span>Take Photo</span></button><button class="lsf-photo-option" id="lsfUploadBtn"><i class="fas fa-folder-open" style="font-size:2rem;"></i><span>Upload Photo</span></button></div><input type="file" id="lsfFileInput" accept="image/*" capture="user" style="display:none;" /><div class="lsf-camera-container hidden" id="lsfCameraContainer"><video id="lsfCameraVideo" autoplay playsinline muted></video><canvas id="lsfCameraCanvas" style="display:none;"></canvas><button class="lsf-btn lsf-btn-secondary" id="lsfCaptureBtn" style="margin:0 auto;"><i class="fas fa-camera"></i> Capture</button></div><div class="lsf-preview-container hidden" id="lsfPreviewContainer"><img id="lsfPreviewImage" src="" alt="Preview" /><div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;"><button class="lsf-btn lsf-btn-secondary" id="lsfRetakeBtn"><i class="fas fa-redo"></i> Retake</button><button class="lsf-btn lsf-btn-primary" id="lsfStep2Next">Continue <i class="fas fa-arrow-right"></i></button></div></div><small id="lsfPhotoError" style="color:#c0392b;display:none;text-align:center;margin-top:8px;">Please capture or upload a photo first.</small></div>`;
+                bindStep2Events();
+            }
+            function bindStep2Events() {
+                const photoOpts = document.getElementById('lsfPhotoOptions'), camCont = document.getElementById('lsfCameraContainer'), prevCont = document.getElementById('lsfPreviewContainer');
+                document.getElementById('lsfCameraBtn').addEventListener('click', () => openCamera(photoOpts, camCont, prevCont));
+                document.getElementById('lsfUploadBtn').addEventListener('click', () => document.getElementById('lsfFileInput').click());
+                document.getElementById('lsfFileInput').addEventListener('change', e => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{capturedImageData=ev.target.result; showPreview(ev.target.result,photoOpts,camCont,prevCont); stopCamera();}; r.readAsDataURL(f); });
+                document.getElementById('lsfCaptureBtn').addEventListener('click', () => captureFromCamera(photoOpts, camCont, prevCont));
+                document.getElementById('lsfRetakeBtn').addEventListener('click', () => { capturedImageData=null; prevCont.classList.add('hidden'); photoOpts.classList.remove('hidden'); camCont.classList.add('hidden'); document.getElementById('lsfPhotoError').style.display='none'; stopCamera(); });
+                document.getElementById('lsfStep2Next').addEventListener('click', () => { if(!capturedImageData) { document.getElementById('lsfPhotoError').style.display='block'; return; } document.getElementById('lsfPhotoError').style.display='none'; stopCamera(); renderStep(3); startAnalysis(); });
+            }
+            async function openCamera(photoOpts, camCont, prevCont) { stopCamera(); try { cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }, audio: false }); document.getElementById('lsfCameraVideo').srcObject = cameraStream; photoOpts.classList.add('hidden'); camCont.classList.remove('hidden'); prevCont.classList.add('hidden'); capturedImageData=null; document.getElementById('lsfPhotoError').style.display='none'; } catch(e) { alert('Camera access denied. Please upload a photo.'); } }
+            function captureFromCamera(photoOpts, camCont, prevCont) { const video = document.getElementById('lsfCameraVideo'), canvas = document.getElementById('lsfCameraCanvas'); canvas.width = video.videoWidth||640; canvas.height = video.videoHeight||640; canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height); capturedImageData = canvas.toDataURL('image/jpeg',0.85); showPreview(capturedImageData, photoOpts, camCont, prevCont); stopCamera(); }
+            function showPreview(dataUrl, photoOpts, camCont, prevCont) { document.getElementById('lsfPreviewImage').src = dataUrl; photoOpts.classList.add('hidden'); camCont.classList.add('hidden'); prevCont.classList.remove('hidden'); document.getElementById('lsfPhotoError').style.display='none'; }
+            function renderStep3() { stepContent.innerHTML = `<div class="lsf-step-body lsf-analyzing"><div class="lsf-spinner-container"><div class="lsf-spinner"></div><h3>Analyzing Your Skin Tone...</h3><p style="color:#888;">Our AI is detecting your perfect shade match</p><div class="lsf-progress-bar"><div class="lsf-progress-fill" id="lsfProgressFill"></div></div><small id="lsfAnalysisStatus" style="color:#aaa;">Sampling skin pixels...</small></div></div>`; }
+            async function startAnalysis() {
+                const fill = document.getElementById('lsfProgressFill'), status = document.getElementById('lsfAnalysisStatus');
+                const upd = (p,m) => { if(fill) fill.style.width=p+'%'; if(status) status.textContent=m; };
+                upd(10,'Loading image...'); await sleep(400);
+                upd(25,'Sampling skin pixels...'); await sleep(500);
+                const result = await analyzeSkinTone(capturedImageData); detectedSkinTone=result.skinTone; detectedUndertone=result.undertone; upd(45,'Skin tone: '+detectedSkinTone+' | Undertone: '+detectedUndertone); await sleep(600);
+                upd(60,'Searching lipstick products...'); await sleep(500);
+                recommendedProducts = await findBestMatches(detectedSkinTone, detectedUndertone); upd(85,'Finding best matches...'); await sleep(500);
+                upd(95,'Finalizing...'); await sleep(300); upd(100,'Analysis complete!'); await sleep(400);
+                await saveRecommendation(); renderStep(4);
+            }
+            function analyzeSkinTone(imageData) { return new Promise(resolve => { const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d'), img=new Image(); img.onload=()=>{ const maxDim=200; let w=img.width, h=img.height; const ratio=Math.min(maxDim/w, maxDim/h); w=Math.round(w*ratio); h=Math.round(h*ratio); canvas.width=w; canvas.height=h; ctx.drawImage(img,0,0,w,h); const sampleX=Math.floor(w*0.3), sampleY=Math.floor(h*0.25), sampleW=Math.floor(w*0.4), sampleH=Math.floor(h*0.45); const imgData=ctx.getImageData(sampleX,sampleY,sampleW,sampleH).data; let r=0,g=0,b=0,cnt=0; for(let i=0;i<imgData.length;i+=12){ const br=(imgData[i]+imgData[i+1]+imgData[i+2])/3; if(br<25||br>245) continue; r+=imgData[i]; g+=imgData[i+1]; b+=imgData[i+2]; cnt++; } if(cnt<10){ const fd=ctx.getImageData(0,0,w,h).data; r=0;g=0;b=0;cnt=0; for(let i=0;i<fd.length;i+=12){ const br=(fd[i]+fd[i+1]+fd[i+2])/3; if(br<20||br>250) continue; r+=fd[i]; g+=fd[i+1]; b+=fd[i+2]; cnt++; } } if(cnt===0) return resolve({skinTone:'Medium',undertone:'Neutral'}); const avgR=r/cnt, avgG=g/cnt, avgB=b/cnt; const hsl=rgbToHsl(avgR,avgG,avgB), lightness=hsl[2]*100; let skin='Medium'; SKIN_TONES.forEach(t=>{if(lightness>=t.minL&&lightness<t.maxL) skin=t.name;}); if(lightness>=100) skin='Very Fair'; if(lightness<0) skin='Dark'; const rb=avgR/(avgB||1); let undertone=rb>1.25?'Warm':rb<0.9?'Cool':'Neutral'; resolve({skinTone:skin,undertone}); }; img.onerror=()=>resolve({skinTone:'Medium',undertone:'Neutral'}); img.src=imageData; }); }
+            function rgbToHsl(r,g,b){ r/=255;g/=255;b/=255; const mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2; let h=0,s=0; if(mx!==mn){ const d=mx-mn; s=l>0.5?d/(2-mx-mn):d/(mx+mn); switch(mx){ case r: h=((g-b)/d+(g<b?6:0))/6; break; case g: h=((b-r)/d+2)/6; break; case b: h=((r-g)/d+4)/6; break; } } return [h,s,l]; }
+            async function findBestMatches(skinTone, undertone) {
+                let prods = [];
+                try { if(typeof db!=='undefined'){ const snap = await db.collection('products').where('category','==','Lipstick').get(); snap.forEach(d=>{ const data=d.data(); prods.push({id:d.id,name:data.name,price:data.price||0,image:data.image||'',colours:data.colours||[],description:data.description||''}); }); } } catch(e) {}
+                if(!prods.length && typeof products!=='undefined') prods = products.filter(p=>p.category?.toLowerCase()==='lipstick');
+                if(!prods.length) return [];
+                const scored = prods.map(p=>{ let bestScore=0, bestShade=null; (p.colours||[]).forEach(c=>{ const shadeName=(typeof c==='object'?c.name:String(c)).toLowerCase(); const shadeHex=typeof c==='object'?c.hex:'#000000'; const sc=calcShadeScore(shadeName,shadeHex,skinTone,undertone); if(sc>bestScore){ bestScore=sc; bestShade=typeof c==='object'?c:{name:String(c),hex:'#000000'}; } }); if(!bestShade) { bestScore=3; bestShade={name:'Universal',hex:'#cc8899'}; } return {...p, matchScore:bestScore, bestShade, bestShadeScore:bestScore}; });
+                return scored.sort((a,b)=>b.matchScore-a.matchScore).slice(0,6);
+            }
+            function calcShadeScore(shadeName, shadeHex, skinTone, undertone) {
+                let score=3; const lower=shadeName.toLowerCase(); const hex=shadeHex.replace('#',''); const r=parseInt(hex.substring(0,2),16)||128,g=parseInt(hex.substring(2,4),16)||128,b=parseInt(hex.substring(4,6),16)||128; const hsl=rgbToHsl(r,g,b), hue=hsl[0]*360, sat=hsl[1]*100, light=hsl[2]*100;
+                const isWarm = (hue>=0&&hue<=30)||(hue>=340); const isCool = hue>=270&&hue<=340; const isNeut = (!isWarm&&!isCool)||sat<20;
+                const isNude = lower.includes('nude')||lower.includes('beige')||(sat<25&&light>40&&light<75);
+                const isBerry = lower.includes('berry')||lower.includes('plum')||lower.includes('wine');
+                const isRed = lower.includes('red')||lower.includes('crimson'); const isPink = lower.includes('pink')||lower.includes('rose');
+                const combo = skinTone+'_'+undertone;
+                const scoring = {
+                    'Very Fair_Cool': ()=> { if(isBerry)score+=3; if(isPink&&!isWarm)score+=2; if(isNude&&light>55)score+=1; },
+                    'Very Fair_Warm': ()=> { if(isNude&&light>55)score+=3; if(isPink&&isWarm)score+=2; },
+                    'Fair_Cool': ()=> { if(isBerry)score+=3; if(isPink)score+=2; if(isRed&&!isWarm)score+=2; },
+                    'Fair_Warm': ()=> { if(isPink&&isWarm)score+=3; if(isNude&&light>40)score+=2; },
+                    'Light_Cool': ()=> { if(isBerry)score+=3; if(isPink)score+=2; },
+                    'Light_Warm': ()=> { if(isRed&&isWarm)score+=3; if(isNude)score+=2; },
+                    'Medium_Cool': ()=> { if(isBerry)score+=3; if(isRed&&sat>40)score+=2; },
+                    'Medium_Warm': ()=> { if(isRed&&isWarm)score+=3; if(isNude&&light<65)score+=2; },
+                    'Tan_Cool': ()=> { if(isBerry)score+=3; if(isRed&&sat>45)score+=2; },
+                    'Tan_Warm': ()=> { if(isRed&&isWarm)score+=3; },
+                    'Deep_Cool': ()=> { if(isBerry)score+=3; if(isRed&&sat>50)score+=3; },
+                    'Deep_Warm': ()=> { if(isRed&&isWarm)score+=3; },
+                    'Dark_Cool': ()=> { if(isBerry)score+=3; if(isRed&&sat>45)score+=3; },
+                    'Dark_Warm': ()=> { if(isRed&&isWarm)score+=3; },
+                };
+                if(scoring[combo]) scoring[combo]();
+                if(lower.includes('matte')) score+=1; if(lower.includes('cream')||lower.includes('satin')) score+=1;
+                return Math.max(1,Math.min(5,score));
+            }
+            function renderStep4() {
+                let html = '';
+                if(!recommendedProducts.length) html=`<div class="lsf-error"><i class="fas fa-search"></i><h3>No lipstick products found</h3><p>Add lipstick products in the admin panel first.</p><button class="lsf-btn lsf-btn-primary" onclick="document.getElementById('lsfClose').click()" style="max-width:200px;margin:16px auto;">Close</button></div>`;
+                else {
+                    html = `<div class="lsf-results-header"><h2>💄 Your Perfect Matches</h2><div style="margin-top:12px;"><span class="lsf-skin-badge"><span class="lsf-skin-dot" style="background:${getSkinHex(detectedSkinTone)};"></span>Skin: ${detectedSkinTone}</span><span class="lsf-skin-badge"><i class="fas fa-palette" style="color:#666;"></i> Undertone: ${detectedUndertone}</span></div></div><div class="lsf-results-grid">${recommendedProducts.map((p,i)=>renderCard(p,i)).join('')}</div><div style="text-align:center;margin-top:16px;"><button class="lsf-btn lsf-btn-secondary" id="lsfRestartBtn" style="max-width:200px;"><i class="fas fa-redo"></i> Try Again</button></div>`;
+                }
+                stepContent.innerHTML = `<div class="lsf-step-body">${html}</div>`;
+                document.querySelectorAll('.lsf-add-cart-btn').forEach(btn=>btn.addEventListener('click', e=>{ e.stopPropagation(); const pid=btn.dataset.productId, sn=btn.dataset.shadeName, sh=btn.dataset.shadeHex; addToCartFromFinder(pid,{name:sn,hex:sh}); }));
+                document.querySelectorAll('.lsf-view-btn').forEach(btn=>btn.addEventListener('click', e=>{ e.stopPropagation(); viewProduct(btn.dataset.productId); }));
+                document.querySelectorAll('.lsf-result-card').forEach(c=>c.addEventListener('click',()=>viewProduct(c.dataset.productId)));
+                const restart = document.getElementById('lsfRestartBtn'); if(restart) restart.addEventListener('click', ()=>{ resetState(); renderStep(1); });
+            }
+            function renderCard(p,i) { const score=p.matchScore||3; const stars='★'.repeat(score)+'☆'.repeat(5-score); const label=score>=5?'Perfect Match':score>=4?'Great Match':score>=3?'Good Match':'Fair Match'; const sname=p.bestShade?.name||'Universal', shex=p.bestShade?.hex||'#cc8899'; return `<div class="lsf-result-card" data-product-id="${escapeAttr(p.id)}" data-shade-name="${escapeAttr(sname)}" data-shade-hex="${escapeAttr(shex)}"><img src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" onerror="this.src='https://placehold.co/400x300/f8f8f8/ccc?text=No+Image'"><div class="lsf-result-info"><h4>${escapeHtml(p.name)}</h4><span class="lsf-shade-name"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${shex};vertical-align:middle;margin-right:6px;border:1px solid #ccc;"></span>${escapeHtml(sname)}</span><div class="lsf-stars">${stars}</div><span class="lsf-score-badge">${label}</span><div class="lsf-price">Rs. ${(p.price||0).toLocaleString()}</div></div><div class="lsf-result-actions"><button class="lsf-btn lsf-btn-primary lsf-add-cart-btn" data-product-id="${escapeAttr(p.id)}" data-shade-name="${escapeAttr(sname)}" data-shade-hex="${escapeAttr(shex)}"><i class="fas fa-cart-plus"></i> Add</button><button class="lsf-btn-outline lsf-view-btn" data-product-id="${escapeAttr(p.id)}"><i class="fas fa-eye"></i> View</button></div></div>`; }
+            function addToCartFromFinder(productId, colour) { if(typeof addToCart==='function') { addToCart(productId, colour); showToastMsg('✅ Added to cart!'); } else if(typeof window.addToCart==='function') { window.addToCart(productId, colour); showToastMsg('✅ Added to cart!'); } else { if(typeof cart!=='undefined'&&Array.isArray(cart)){ const idx=cart.findIndex(i=>i.productId===productId&&JSON.stringify(i.colour)===JSON.stringify(colour)); if(idx>-1) cart[idx].quantity+=1; else cart.push({productId,colour,quantity:1}); if(typeof saveCartAndUpdate==='function') saveCartAndUpdate(); if(typeof updateCartCount==='function') updateCartCount(); showToastMsg('✅ Added to cart!'); } } }
+            function viewProduct(productId) { if(typeof openProductModal==='function') openProductModal(productId); else if(typeof window.openProductModal==='function') window.openProductModal(productId); closeFinder(); }
+            function showToastMsg(msg) { if(typeof showToast==='function') showToast(msg); else { const t=document.getElementById('toast'); if(t){ t.textContent=msg; t.classList.add('show'); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),3000); } } }
+            async function saveRecommendation() { try { let imgURL=capturedImageData; if(LARA_STORAGE?.isAvailable()&&capturedImageData) imgURL=await LARA_STORAGE.uploadImage(capturedImageData); if(typeof db!=='undefined') await db.collection('lipstickRecommendations').add({customerName,phone:customerPhone,imageURL:imgURL?.substring(0,1000)||'',skinTone:detectedSkinTone,undertone:detectedUndertone,recommendedProducts:recommendedProducts.slice(0,6).map(p=>({productId:p.id,productName:p.name,shadeName:p.bestShade?.name||'',shadeHex:p.bestShade?.hex||'',score:p.matchScore||3,price:p.price||0})),createdAt:firebase.firestore.FieldValue.serverTimestamp()}); } catch(e) {} }
+            function getSkinHex(t) { const found=SKIN_TONES.find(x=>x.name===t); return found?found.hex:'#c89460'; }
+            function escapeHtml(s){ if(typeof s!=='string') return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+            function escapeAttr(s){ if(typeof s!=='string') return ''; return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+            function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+            if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+            window.LARAShadeFinder = { open: openFinder, close: closeFinder, init };
+        })();
+    </script>
+
+    <!-- ========== ORIGINAL LARA SCRIPTS (FULL) ========== -->
+    <script>
+        // ==================== SECURITY UTILITIES ====================
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        }
+        function formatBotReply(text) {
+            if (typeof text !== 'string') return '';
+            let safe = escapeHtml(text);
+            safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            safe = safe.replace(/\n/g, '<br>');
+            return safe;
+        }
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+        function isNotBlank(str) {
+            return typeof str === 'string' && str.trim().length > 0;
+        }
+        function sanitizeText(str) {
+            if (typeof str !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.textContent.trim();
+        }
+        // ==================== FIREBASE CONFIG ====================
         const firebaseConfig = {
             apiKey: "AIzaSyAOqKpGbesbgeAfA2J_QGfomjTiY_FIfnA",
             authDomain: "lara-f5aed.firebaseapp.com",
@@ -178,8 +452,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-
-        // EmailJS
+        // ==================== EMAILJS CONFIG ====================
         const EMAILJS_PUBLIC_KEY = 'W_o_RiuSlVn_zCxlp';
         const EMAILJS_SERVICE_ID = 'service_jole3ot';
         const EMAILJS_TEMPLATE_ID = 'template_n8pbmd8';
@@ -188,16 +461,25 @@
             emailjs.init(EMAILJS_PUBLIC_KEY);
             emailJsReady = true;
         }
-
-        // Global state
+        // ==================== GLOBAL STATE ====================
         let products = [];
         let currentProduct = null;
         let selectedColour = null;
-        let cart = JSON.parse(localStorage.getItem('lara_cart_v5')) || [];
+        let cart = [];
         let categoriesSet = new Set();
         let trainingData = [];
-
-        // DOM elements
+        try {
+            const rawCart = localStorage.getItem('lara_cart_v5');
+            if (rawCart) {
+                const parsed = JSON.parse(rawCart);
+                if (Array.isArray(parsed)) {
+                    cart = parsed.filter(item => item && typeof item.productId === 'string' && typeof item.quantity === 'number' && item.quantity > 0);
+                }
+            }
+        } catch(e) {
+            cart = [];
+            localStorage.removeItem('lara_cart_v5');
+        }
         const productGrid = document.getElementById('productGrid');
         const searchInput = document.getElementById('searchInput');
         const categoryFilter = document.getElementById('categoryFilter');
@@ -207,63 +489,60 @@
         const cartTotalEl = document.getElementById('cartTotal');
         const toastEl = document.getElementById('toast');
         const modal = document.getElementById('productModal');
-
         function showToast(msg) {
-            toastEl.textContent = msg;
+            toastEl.textContent = sanitizeText(msg);
             toastEl.classList.add('show');
             clearTimeout(toastEl._timer);
             toastEl._timer = setTimeout(() => toastEl.classList.remove('show'), 3000);
         }
-
-        // Load training data
         async function loadTrainingData() {
             try {
                 const snap = await db.collection('chatbotTraining').get();
                 trainingData = [];
                 snap.forEach(doc => {
-                    trainingData.push({ id: doc.id, ...doc.data() });
+                    const data = doc.data();
+                    trainingData.push({ id: doc.id, question: sanitizeText(data.question || ''), answer: sanitizeText(data.answer || ''), keywords: Array.isArray(data.keywords) ? data.keywords.map(k => sanitizeText(k)).filter(k => k.length > 0) : [], priority: sanitizeText(data.priority || 'normal') });
                 });
-                console.log('✅ Training data loaded:', trainingData.length, 'items');
-            } catch (e) {
-                console.warn('⚠️ Training load error:', e.message);
-                trainingData = [];
-            }
+            } catch(e) {}
         }
-
-        // Real-time products listener
         function setupRealtimeProducts() {
             db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
                 products = [];
                 categoriesSet.clear();
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    products.push({ id: doc.id, ...data });
-                    if (data.category) categoriesSet.add(data.category);
+                    const sanitized = {
+                        id: doc.id,
+                        name: sanitizeText(data.name || 'Product'),
+                        category: sanitizeText(data.category || 'Beauty'),
+                        description: sanitizeText(data.description || 'Premium quality product.'),
+                        price: typeof data.price === 'number' && data.price >= 0 ? data.price : 0,
+                        image: typeof data.image === 'string' && data.image.length > 0 ? data.image : 'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image',
+                        colours: Array.isArray(data.colours) ? data.colours.map(c => {
+                            if (typeof c === 'object' && c !== null) return { name: sanitizeText(c.name || ''), hex: /^#[0-9a-fA-F]{3,6}$/.test(c.hex || '') ? c.hex : '#bcbcbc' };
+                            return { name: sanitizeText(String(c)), hex: '#bcbcbc' };
+                        }) : [],
+                        createdAt: data.createdAt || null
+                    };
+                    products.push(sanitized);
+                    if (sanitized.category) categoriesSet.add(sanitized.category);
                 });
                 const currentCat = categoryFilter.value;
                 categoryFilter.innerHTML = '<option value="all">All Categories</option>';
-                [...categoriesSet].sort().forEach(cat => {
-                    categoryFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
-                });
-                if (currentCat && [...categoriesSet].includes(currentCat)) {
-                    categoryFilter.value = currentCat;
-                }
+                [...categoriesSet].sort().forEach(cat => { categoryFilter.innerHTML += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`; });
+                if (currentCat && [...categoriesSet].includes(currentCat)) categoryFilter.value = currentCat;
                 renderProducts();
                 updateCartCount();
                 renderCartItems();
             }, error => {
-                console.error("Snapshot error:", error);
-                productGrid.innerHTML = '<p style="text-align:center;">⚠️ Error loading products</p>';
+                productGrid.innerHTML = '<p style="text-align:center;">⚠️ Error loading products. Please refresh.</p>';
             });
         }
-
         function renderProducts() {
             const searchTerm = searchInput.value.toLowerCase().trim();
             const selectedCat = categoryFilter.value;
             let filtered = products.filter(p => {
-                const matchSearch = (p.name || '').toLowerCase().includes(searchTerm) ||
-                    (p.category || '').toLowerCase().includes(searchTerm) ||
-                    (p.description || '').toLowerCase().includes(searchTerm);
+                const matchSearch = p.name.toLowerCase().includes(searchTerm) || p.category.toLowerCase().includes(searchTerm) || p.description.toLowerCase().includes(searchTerm);
                 const matchCat = selectedCat === 'all' || p.category === selectedCat;
                 return matchSearch && matchCat;
             });
@@ -276,45 +555,24 @@
                 const colours = p.colours || [];
                 let previewHtml = '';
                 if (colours.length) {
-                    previewHtml = '<div class="colours-preview">' + 
-                        colours.slice(0,3).map(c => {
-                            const hex = typeof c === 'object' ? c.hex : '#aaa';
-                            const name = typeof c === 'object' ? c.name : c;
-                            return '<span class="mini-colour"><span class="mini-dot" style="background:' + hex + ';"></span>' + name + '</span>';
-                        }).join('') + 
-                        (colours.length > 3 ? '<span class="mini-colour">+' + (colours.length-3) + '</span>' : '') + 
-                        '</div>';
+                    previewHtml = '<div class="colours-preview">' + colours.slice(0,3).map(c => '<span class="mini-colour"><span class="mini-dot" style="background:'+escapeHtml(c.hex)+';"></span>'+escapeHtml(c.name)+'</span>').join('') + (colours.length>3 ? '<span class="mini-colour">+'+(colours.length-3)+'</span>':'') + '</div>';
                 }
-                html += '<div class="card" onclick="openProductModal(\'' + p.id + '\')">' +
-                    '<img src="' + (p.image || 'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image') + '" alt="' + (p.name || 'Product') + '" onerror="this.src=\'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image\'">' +
-                    '<h3>' + (p.name || 'Product') + '</h3>' +
-                    '<p><i class="fas fa-tag"></i> ' + (p.category || 'Beauty') + '</p>' +
-                    '<div class="price">Rs. ' + (p.price || 0).toLocaleString() + '</div>' +
-                    previewHtml +
-                    '<button class="btn" onclick="event.stopPropagation();quickAddToCart(\'' + p.id + '\')"><i class="fas fa-cart-plus"></i> Add to Cart</button>' +
-                    '</div>';
+                html += '<div class="card" onclick="openProductModal(\''+escapeHtml(p.id)+'\')"><img src="'+escapeHtml(p.image)+'" alt="'+escapeHtml(p.name)+'" loading="lazy" onerror="this.src=\'https://placehold.co/400x300/f8f8f8/ccc?text=No+Image\'"><h3>'+escapeHtml(p.name)+'</h3><p><i class="fas fa-tag"></i> '+escapeHtml(p.category)+'</p><div class="price">Rs. '+p.price.toLocaleString()+'</div>'+previewHtml+'<button class="btn" onclick="event.stopPropagation();quickAddToCart(\''+escapeHtml(p.id)+'\')"><i class="fas fa-cart-plus"></i> Add to Cart</button></div>';
             });
             productGrid.innerHTML = html;
         }
-
         let searchDebounce;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchDebounce);
-            searchDebounce = setTimeout(renderProducts, 300);
-        });
+        searchInput.addEventListener('input', () => { searchInput.value = searchInput.value.replace(/<[^>]*>/g, ''); clearTimeout(searchDebounce); searchDebounce = setTimeout(renderProducts, 300); });
         categoryFilter.addEventListener('change', renderProducts);
-
-        // Modal functions
         window.openProductModal = (productId) => {
             currentProduct = products.find(p => p.id === productId);
             if (!currentProduct) return;
             selectedColour = null;
             document.getElementById('modalImage').src = currentProduct.image || 'https://placehold.co/500x400/f8f8f8/ddd?text=No+Preview';
-            document.getElementById('modalName').textContent = currentProduct.name || '';
-            document.getElementById('modalPrice').textContent = (currentProduct.price || 0).toLocaleString();
-            document.getElementById('modalCategory').textContent = '📂 ' + (currentProduct.category || 'General');
-            document.getElementById('modalDetails').textContent = currentProduct.description || 'Silky finish & premium quality.';
-            
+            document.getElementById('modalName').textContent = currentProduct.name;
+            document.getElementById('modalPrice').textContent = currentProduct.price.toLocaleString();
+            document.getElementById('modalCategory').textContent = '📂 ' + currentProduct.category;
+            document.getElementById('modalDetails').textContent = currentProduct.description;
             const coloursDiv = document.getElementById('modalColours');
             coloursDiv.innerHTML = '';
             const colours = currentProduct.colours || [];
@@ -322,94 +580,58 @@
                 coloursDiv.innerHTML = '<span style="color:#6c6c6c;">No shade selection needed</span>';
             } else {
                 colours.forEach(colour => {
-                    const name = typeof colour === 'object' ? colour.name : colour;
-                    const hex = typeof colour === 'object' ? colour.hex : '#bcbcbc';
                     const chip = document.createElement('span');
                     chip.className = 'colour-chip';
-                    chip.innerHTML = '<span class="dot" style="background:' + hex + ';"></span>' + name;
+                    chip.innerHTML = '<span class="dot" style="background:' + escapeHtml(colour.hex) + ';"></span>' + escapeHtml(colour.name);
                     chip.onclick = () => {
                         document.querySelectorAll('.colour-chip').forEach(c => c.classList.remove('selected'));
                         chip.classList.add('selected');
-                        selectedColour = { name, hex };
+                        selectedColour = { name: colour.name, hex: colour.hex };
                     };
                     coloursDiv.appendChild(chip);
                 });
             }
             modal.classList.add('show');
         };
-
-        window.closeModal = () => {
-            modal.classList.remove('show');
-            currentProduct = null;
-            selectedColour = null;
-        };
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
-        });
-
+        window.closeModal = () => { modal.classList.remove('show'); currentProduct = null; selectedColour = null; };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
         window.quickAddToCart = (productId) => {
             const product = products.find(p => p.id === productId);
             if (!product) return;
-            if ((product.colours || []).length > 0) {
-                openProductModal(productId);
-                showToast('✨ Please select a shade first');
-                return;
-            }
+            if ((product.colours || []).length > 0) { openProductModal(productId); showToast('✨ Please select a shade first'); return; }
             addToCart(productId, null);
         };
-
         window.addToCartFromModal = () => {
             if (!currentProduct) return;
-            if ((currentProduct.colours || []).length > 0 && !selectedColour) {
-                showToast('💄 Choose a colour before adding');
-                return;
-            }
+            if ((currentProduct.colours || []).length > 0 && !selectedColour) { showToast('💄 Choose a colour before adding'); return; }
             addToCart(currentProduct.id, selectedColour);
             closeModal();
         };
-
         function addToCart(productId, colour) {
-            const idx = cart.findIndex(item => 
-                item.productId === productId && 
-                JSON.stringify(item.colour) === JSON.stringify(colour)
-            );
+            const idx = cart.findIndex(item => item.productId === productId && JSON.stringify(item.colour) === JSON.stringify(colour));
             if (idx > -1) {
-                cart[idx].quantity += 1;
+                if (cart[idx].quantity < 99) cart[idx].quantity += 1;
+                else { showToast('⚠️ Maximum quantity reached (99)'); return; }
             } else {
                 cart.push({ productId, colour, quantity: 1 });
             }
             saveCartAndUpdate();
             showToast('✓ Added to cart');
         }
-
-        window.removeFromCart = (idx) => { 
-            cart.splice(idx, 1); 
-            saveCartAndUpdate(); 
-        };
-        
+        window.removeFromCart = (idx) => { if (idx >= 0 && idx < cart.length) { cart.splice(idx, 1); saveCartAndUpdate(); } };
         window.changeQuantity = (idx, delta) => {
-            cart[idx].quantity += delta;
-            if (cart[idx].quantity <= 0) cart.splice(idx, 1);
-            saveCartAndUpdate();
-        };
-
-        function saveCartAndUpdate() {
-            localStorage.setItem('lara_cart_v5', JSON.stringify(cart));
-            updateCartCount();
-            renderCartItems();
-        }
-
-        function updateCartCount() {
-            cartCountEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-        }
-
-        function renderCartItems() {
-            if (!cart.length) {
-                cartItemsEl.innerHTML = '<p style="opacity:0.7;text-align:center;margin-top:20px;">🛒 Your cart is empty</p>';
-                cartTotalEl.textContent = '0.00';
-                return;
+            if (idx >= 0 && idx < cart.length) {
+                cart[idx].quantity += delta;
+                if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+                else if (cart[idx].quantity > 99) { cart[idx].quantity = 99; showToast('⚠️ Maximum quantity is 99'); }
+                saveCartAndUpdate();
             }
+        };
+        function saveCartAndUpdate() { try { localStorage.setItem('lara_cart_v5', JSON.stringify(cart)); } catch(e) {} updateCartCount(); renderCartItems(); }
+        function updateCartCount() { const count = cart.reduce((sum, item) => sum + item.quantity, 0); cartCountEl.textContent = count; }
+        function renderCartItems() {
+            if (!cart.length) { cartItemsEl.innerHTML = '<p style="opacity:0.7;text-align:center;margin-top:20px;">🛒 Your cart is empty</p>'; cartTotalEl.textContent = '0.00'; return; }
             let html = '', totalCart = 0;
             cart.forEach((item, idx) => {
                 const product = products.find(p => p.id === item.productId);
@@ -417,291 +639,162 @@
                 const price = product.price || 0;
                 const subtotal = price * item.quantity;
                 totalCart += subtotal;
-                html += '<div class="cart-item">' +
-                    '<h4 style="font-weight:600;">' + product.name + '</h4>' +
-                    (item.colour ? '<p style="font-size:0.8rem;margin-top:4px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + item.colour.hex + ';margin-right:6px;"></span>' + item.colour.name + '</p>' : '') +
-                    '<p>Rs. ' + price.toLocaleString() + ' × ' + item.quantity + ' = <strong>Rs. ' + subtotal.toLocaleString() + '</strong></p>' +
-                    '<div style="display:flex;gap:8px;margin-top:10px;">' +
-                    '<button class="qty-btn" onclick="changeQuantity(' + idx + ',-1)">−</button>' +
-                    '<span style="padding:0 6px;">' + item.quantity + '</span>' +
-                    '<button class="qty-btn" onclick="changeQuantity(' + idx + ',1)">+</button>' +
-                    '<button class="remove-btn" onclick="removeFromCart(' + idx + ')"><i class="fas fa-trash-alt"></i> Remove</button>' +
-                    '</div></div>';
+                html += '<div class="cart-item"><h4 style="font-weight:600;">'+escapeHtml(product.name)+'</h4>'+(item.colour?'<p style="font-size:0.8rem;margin-top:4px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+escapeHtml(item.colour.hex)+';margin-right:6px;"></span>'+escapeHtml(item.colour.name)+'</p>':'')+'<p>Rs. '+price.toLocaleString()+' × '+item.quantity+' = <strong>Rs. '+subtotal.toLocaleString()+'</strong></p><div style="display:flex;gap:8px;margin-top:10px;"><button class="qty-btn" onclick="changeQuantity('+idx+',-1)">−</button><span style="padding:0 6px;">'+item.quantity+'</span><button class="qty-btn" onclick="changeQuantity('+idx+',1)">+</button><button class="remove-btn" onclick="removeFromCart('+idx+')"><i class="fas fa-trash-alt"></i> Remove</button></div></div>';
             });
             cartItemsEl.innerHTML = html;
             cartTotalEl.textContent = totalCart.toLocaleString();
         }
-
-        window.toggleCart = () => {
-            cartSidebar.classList.toggle('active');
-            if (cartSidebar.classList.contains('active')) renderCartItems();
-        };
-
+        window.toggleCart = () => { cartSidebar.classList.toggle('active'); if (cartSidebar.classList.contains('active')) renderCartItems(); };
         async function sendOrderEmail(orderData) {
             if (!emailJsReady) return false;
             try {
-                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                    customer_name: orderData.name,
-                    customer_phone: orderData.phone,
-                    customer_email: orderData.email,
-                    customer_address: orderData.address,
-                    order_items: orderData.details,
+                const sanitizedData = {
+                    customer_name: sanitizeText(orderData.name).substring(0,100),
+                    customer_phone: sanitizeText(orderData.phone).substring(0,20),
+                    customer_email: sanitizeText(orderData.email).substring(0,150),
+                    customer_address: sanitizeText(orderData.address).substring(0,300),
+                    order_items: sanitizeText(orderData.details).substring(0,2000),
                     total_price: 'Rs. ' + orderData.total.toLocaleString(),
                     order_date: new Date().toLocaleString('en-LK')
-                });
+                };
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, sanitizedData);
                 return true;
-            } catch(e) {
-                console.error(e);
-                return false;
-            }
+            } catch(e) { return false; }
         }
-
+        let lastOrderTime = 0;
+        const ORDER_COOLDOWN_MS = 10000;
         window.placeOrder = async () => {
+            const now = Date.now();
+            if (now - lastOrderTime < ORDER_COOLDOWN_MS) {
+                const remaining = Math.ceil((ORDER_COOLDOWN_MS - (now - lastOrderTime)) / 1000);
+                showToast('⏳ Please wait ' + remaining + ' seconds before placing another order.');
+                return;
+            }
             if (cart.length === 0) { showToast('Cart is empty'); return; }
             const name = document.getElementById('customerName').value.trim();
             const email = document.getElementById('customerEmail').value.trim();
             const address = document.getElementById('customerAddress').value.trim();
-            if (!name || !email || !address) { showToast('Please fill Name, Email, Address'); return; }
+            const phone = document.getElementById('customerPhone').value.trim();
+            if (!isNotBlank(name)) { showToast('❌ Please enter your full name.'); return; }
+            if (!isNotBlank(email) || !isValidEmail(email)) { showToast('❌ Please enter a valid email address.'); return; }
+            if (!isNotBlank(address)) { showToast('❌ Please enter your delivery address.'); return; }
+            if (name.length > 100) { showToast('❌ Name is too long (max 100 characters).'); return; }
+            if (address.length > 300) { showToast('❌ Address is too long (max 300 characters).'); return; }
             let orderTotal = 0, orderDetails = '';
-            cart.forEach(item => {
+            for (const item of cart) {
                 const prod = products.find(p => p.id === item.productId);
                 if (prod) {
-                    let subtotal = (prod.price||0) * item.quantity;
+                    let subtotal = (prod.price || 0) * item.quantity;
                     orderTotal += subtotal;
                     orderDetails += '• ' + prod.name + (item.colour ? ' (' + item.colour.name + ')' : '') + ' × ' + item.quantity + ' = Rs. ' + subtotal.toLocaleString() + '\n';
                 }
-            });
-            const success = await sendOrderEmail({ 
-                name, 
-                phone: document.getElementById('customerPhone').value, 
-                email, 
-                address, 
-                details: orderDetails, 
-                total: orderTotal 
-            });
+            }
+            lastOrderTime = now;
+            const success = await sendOrderEmail({ name, phone, email, address, details: orderDetails, total: orderTotal });
             if (success) {
                 cart = []; saveCartAndUpdate();
-                ['customerName','customerPhone','customerEmail','customerAddress'].forEach(id => document.getElementById(id).value = '');
+                ['customerName','customerPhone','customerEmail','customerAddress'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
                 toggleCart();
                 showToast('✅ Order sent! Check your email.');
-            } else {
-                showToast('❌ Email failed. Try again.');
-            }
+            } else { showToast('❌ Email failed. Please try again or contact support.'); lastOrderTime = 0; }
         };
-
-        // ==================== CHATBOT FUNCTION ====================
+        let lastChatTime = 0;
+        const CHAT_COOLDOWN_MS = 800;
         async function getBotReply(userMessage) {
             const lowerMsg = userMessage.toLowerCase();
-            
-            // Greetings - SIMPLE CHECK
-            const greetings = ['hi', 'hello', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening'];
-            if (greetings.some(g => lowerMsg.startsWith(g))) {
-                return "Hello beauty! 👋 I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄";
-            }
-            
-            if (lowerMsg.includes('help') || lowerMsg.includes('what can you do')) {
-                return "You can ask me:\n• 'Show lipsticks'\n• 'Products under Rs.3000'\n• 'Price of [product]'\n• 'Shades of [product]'\n• 'New arrivals'\n• Or anything about beauty products! ✨";
-            }
-
-            // Training check
+            const greetings = ['hi','hello','hey','greetings','good morning','good afternoon','good evening'];
+            if (greetings.some(g => lowerMsg.startsWith(g))) return "Hello beauty! 👋 I'm LARA's AI assistant. Ask me about products, prices, shades, new arrivals, or anything beauty! 💄";
+            if (lowerMsg.includes('help') || lowerMsg.includes('what can you do')) return "You can ask me:\n• 'Show lipsticks'\n• 'Products under Rs.3000'\n• 'Price of [product]'\n• 'Shades of [product]'\n• 'New arrivals'\n• Or anything about beauty products! ✨";
             try {
                 const trainingSnap = await db.collection('chatbotTraining').get();
-                let bestMatch = null;
-                let highestScore = 0;
-
+                let bestMatch = null, highestScore = 0;
                 trainingSnap.forEach(doc => {
                     const data = doc.data();
                     let score = 0;
-                    
-                    (data.keywords || []).forEach(keyword => {
-                        if (lowerMsg.includes(keyword.toLowerCase())) {
-                            score += 3;
-                        }
-                    });
-                    
-                    const questionWords = data.question.toLowerCase()
-                        .replace(/[?.,!]/g, '')
-                        .split(' ')
-                        .filter(w => w.length > 2);
-                        
-                    questionWords.forEach(word => {
-                        if (lowerMsg.includes(word)) {
-                            score += 1;
-                        }
-                    });
-                    
-                    if (lowerMsg.includes(data.question.toLowerCase())) {
-                        score += 5;
-                    }
-                    
-                    if (data.priority === 'high') {
-                        score += 2;
-                    }
-                    
-                    if (score > highestScore && score >= 3) {
-                        highestScore = score;
-                        bestMatch = { ...data, id: doc.id };
-                    }
+                    const keywords = Array.isArray(data.keywords) ? data.keywords : [];
+                    keywords.forEach(keyword => { if (lowerMsg.includes(sanitizeText(keyword).toLowerCase())) score += 3; });
+                    const questionWords = sanitizeText(data.question || '').toLowerCase().replace(/[?.,!]/g,'').split(' ').filter(w => w.length > 2);
+                    questionWords.forEach(word => { if (lowerMsg.includes(word)) score += 1; });
+                    if (lowerMsg.includes(sanitizeText(data.question || '').toLowerCase())) score += 5;
+                    if (sanitizeText(data.priority || '') === 'high') score += 2;
+                    if (score > highestScore && score >= 3) { highestScore = score; bestMatch = { ...data, id: doc.id }; }
                 });
-
                 if (bestMatch && highestScore >= 3) {
-                    console.log('✅ Trained response found! Score:', highestScore);
-                    try {
-                        db.collection('chatbotTraining').doc(bestMatch.id).update({
-                            usageCount: firebase.firestore.FieldValue.increment(1)
-                        }).catch(() => {});
-                    } catch(e) {}
-                    return bestMatch.answer;
+                    try { db.collection('chatbotTraining').doc(bestMatch.id).update({ usageCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{}); } catch(e) {}
+                    return sanitizeText(bestMatch.answer || '');
                 }
-            } catch(e) {
-                console.warn('⚠️ Training search failed:', e.message);
-            }
-
-            // Product-related fallback
+            } catch(e) {}
             let filtered = [...products];
-            
-            if (lowerMsg.includes('lipstick') || lowerMsg.includes('lip')) {
-                filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('lipstick'));
-            } else if (lowerMsg.includes('skincare') || lowerMsg.includes('skin') || lowerMsg.includes('cream')) {
-                filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('skincare'));
-            } else if (lowerMsg.includes('perfume') || lowerMsg.includes('fragrance')) {
-                filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('perfume'));
-            } else if (lowerMsg.includes('makeup') || lowerMsg.includes('make up')) {
-                filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('makeup'));
-            }
-
+            if (lowerMsg.includes('lipstick')||lowerMsg.includes('lip')) filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('lipstick'));
+            else if (lowerMsg.includes('skincare')||lowerMsg.includes('skin')||lowerMsg.includes('cream')) filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('skincare'));
+            else if (lowerMsg.includes('perfume')||lowerMsg.includes('fragrance')) filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('perfume'));
+            else if (lowerMsg.includes('makeup')||lowerMsg.includes('make up')) filtered = filtered.filter(p => p.category && p.category.toLowerCase().includes('makeup'));
             const underMatch = lowerMsg.match(/(?:under|below|less than|cheaper than)\s*rs\.?\s*(\d+)/i);
-            if (underMatch) {
-                const max = parseInt(underMatch[1]);
-                filtered = filtered.filter(p => (p.price || 0) <= max);
-            }
-            
+            if (underMatch) { const max = parseInt(underMatch[1]); if (!isNaN(max) && max >= 0) filtered = filtered.filter(p => (p.price || 0) <= max); }
             const overMatch = lowerMsg.match(/(?:over|above|more than)\s*rs\.?\s*(\d+)/i);
-            if (overMatch) {
-                const min = parseInt(overMatch[1]);
-                filtered = filtered.filter(p => (p.price || 0) >= min);
-            }
-
+            if (overMatch) { const min = parseInt(overMatch[1]); if (!isNaN(min) && min >= 0) filtered = filtered.filter(p => (p.price || 0) >= min); }
             let exactProduct = null;
-            for (const p of products) {
-                if (lowerMsg.includes(p.name.toLowerCase())) {
-                    exactProduct = p;
-                    break;
-                }
-            }
-
-            if (exactProduct && (lowerMsg.includes('price') || lowerMsg.includes('cost') || lowerMsg.includes('how much'))) {
-                return '💰 **' + exactProduct.name + '** costs Rs. ' + (exactProduct.price || 0).toLocaleString() + '. ' + (exactProduct.description || 'Premium quality product.');
-            }
-            
-            if (exactProduct && (lowerMsg.includes('shade') || lowerMsg.includes('colour') || lowerMsg.includes('color'))) {
-                const shades = (exactProduct.colours || []).map(c => typeof c === 'object' ? c.name : c).join(', ');
-                return shades ? '🎨 **' + exactProduct.name + '** available shades: ' + shades + '.' : '**' + exactProduct.name + '** has no shade options.';
-            }
-            
-            if (exactProduct) {
-                let shadesText = (exactProduct.colours && exactProduct.colours.length) ? 
-                    ' Available shades: ' + exactProduct.colours.map(c => typeof c === 'object' ? c.name : c).join(', ') + '.' : '';
-                return '✨ **' + exactProduct.name + '**\n💰 Rs. ' + (exactProduct.price||0).toLocaleString() + '\n📝 ' + (exactProduct.description || 'Premium quality.') + shadesText + '\n\nAdd to cart from the shop! 🛒';
-            }
-
-            if (lowerMsg.includes('new arrival') || lowerMsg.includes('latest') || lowerMsg.includes('new product')) {
-                const sorted = [...products]
-                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
-                    .slice(0, 5);
-                return sorted.length ? 
-                    '🆕 **Latest Products:**\n' + sorted.map(p => '• ' + p.name + ' - Rs. ' + (p.price||0).toLocaleString()).join('\n') : 
-                    "No new arrivals yet. Check back soon! 🎀";
-            }
-
-            if (filtered.length > 0 && filtered.length < products.length) {
-                const list = filtered.slice(0, 5).map(p => 
-                    '• **' + p.name + '** - Rs. ' + (p.price||0).toLocaleString()
-                ).join('\n');
-                return '🌸 I found ' + filtered.length + ' product(s):\n' + list + (filtered.length > 5 ? '\n...and more!' : '') + '\n\nBrowse our shop for details! 💝';
-            }
-
-            if (lowerMsg.includes('all product') || lowerMsg.includes('show all') || lowerMsg.includes('what do you have')) {
-                const list = products.slice(0, 8).map(p => 
-                    '• ' + p.name + ' (' + (p.category || 'Beauty') + ')'
-                ).join('\n');
-                return products.length ? 
-                    '🌟 **Our Collection:**\n' + list + (products.length > 8 ? '\n...and ' + (products.length - 8) + ' more!' : '') + '\n\nAsk about any product for details! ✨' :
-                    "No products available at the moment.";
-            }
-
-            // Save unanswered question
+            for (const p of products) { if (lowerMsg.includes(p.name.toLowerCase())) { exactProduct = p; break; } }
+            if (exactProduct && (lowerMsg.includes('price')||lowerMsg.includes('cost')||lowerMsg.includes('how much'))) return '💰 **' + exactProduct.name + '** costs Rs. ' + (exactProduct.price || 0).toLocaleString() + '. ' + (exactProduct.description || 'Premium quality product.');
+            if (exactProduct && (lowerMsg.includes('shade')||lowerMsg.includes('colour')||lowerMsg.includes('color'))) { const shades = (exactProduct.colours || []).map(c => c.name).join(', '); return shades ? '🎨 **' + exactProduct.name + '** available shades: ' + shades + '.' : '**' + exactProduct.name + '** has no shade options.'; }
+            if (exactProduct) { let shadesText = (exactProduct.colours && exactProduct.colours.length) ? ' Available shades: ' + exactProduct.colours.map(c => c.name).join(', ') + '.' : ''; return '✨ **' + exactProduct.name + '**\n💰 Rs. ' + (exactProduct.price || 0).toLocaleString() + '\n📝 ' + (exactProduct.description || 'Premium quality.') + shadesText + '\n\nAdd to cart from the shop! 🛒'; }
+            if (lowerMsg.includes('new arrival')||lowerMsg.includes('latest')||lowerMsg.includes('new product')) { const sorted = [...products].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,5); return sorted.length ? '🆕 **Latest Products:**\n' + sorted.map(p => '• ' + p.name + ' - Rs. ' + (p.price||0).toLocaleString()).join('\n') : "No new arrivals yet."; }
+            if (filtered.length > 0 && filtered.length < products.length) { const list = filtered.slice(0,5).map(p => '• **' + p.name + '** - Rs. ' + (p.price||0).toLocaleString()).join('\n'); return '🌸 I found ' + filtered.length + ' product(s):\n' + list + (filtered.length>5?'\n...and more!':'') + '\n\nBrowse our shop for details! 💝'; }
+            if (lowerMsg.includes('all product')||lowerMsg.includes('show all')||lowerMsg.includes('what do you have')) { const list = products.slice(0,8).map(p => '• ' + p.name + ' (' + (p.category||'Beauty') + ')').join('\n'); return products.length ? '🌟 **Our Collection:**\n' + list + (products.length>8?'\n...and '+(products.length-8)+' more!':'') + '\n\nAsk about any product for details! ✨' : "No products available at the moment."; }
             try {
-                await db.collection('unansweredQuestions').add({
-                    question: userMessage,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log('📝 Saved unanswered question');
-            } catch(e) {
-                console.log('⚠️ Save unanswered skipped:', e.message);
-            }
-
+                const sanitizedQuestion = sanitizeText(userMessage).substring(0,500);
+                if (sanitizedQuestion.length > 0) await db.collection('unansweredQuestions').add({ question: sanitizedQuestion, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            } catch(e) {}
             return "I'm still learning about that! 🤔\n\nTry asking:\n• 'Show lipsticks under Rs.5000'\n• 'What perfumes do you have?'\n• 'Price of [product name]'\n• 'New arrivals'\n\nI'll save your question and learn from it! 📚";
         }
-
-        // Chat UI
         const chatMessagesDiv = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
-        
+        const chatWidget = document.getElementById('chatWidget');
+        const chatToggleBtn = document.getElementById('chatToggleBtn');
+        const chatWindow = document.getElementById('chatWindow');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const chatWidgetCloseBtn = document.getElementById('chatWidgetCloseBtn');
         function addMessage(text, isUser) {
             const div = document.createElement('div');
             div.className = 'message ' + (isUser ? 'user-msg' : 'bot-msg');
-            const formattedText = text
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            div.innerHTML = '<div class="bubble">' + formattedText + '</div>';
+            const formatted = isUser ? escapeHtml(text) : formatBotReply(text);
+            div.innerHTML = '<div class="bubble">' + formatted + '</div>';
             chatMessagesDiv.appendChild(div);
             chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
         }
-        
         async function sendChatMessage() {
-            const text = chatInput.value.trim();
+            const rawText = chatInput.value;
+            const text = rawText.replace(/<[^>]*>/g, '').trim();
             if (!text) return;
+            const now = Date.now();
+            if (now - lastChatTime < CHAT_COOLDOWN_MS) { showToast('⏳ Please wait a moment before sending another message.'); return; }
+            lastChatTime = now;
+            if (text.length > 500) { showToast('⚠️ Message is too long (max 500 characters).'); return; }
             addMessage(text, true);
             chatInput.value = '';
             chatInput.disabled = true;
-            
             const typingDiv = document.createElement('div');
             typingDiv.className = 'message bot-msg';
             typingDiv.innerHTML = '<div class="bubble"><i class="fas fa-circle-notch fa-spin"></i> Thinking...</div>';
             typingDiv.id = 'typingIndicator';
             chatMessagesDiv.appendChild(typingDiv);
-            
-            const reply = await getBotReply(text);
-            
-            const indicator = document.getElementById('typingIndicator');
-            if (indicator) indicator.remove();
-            
+            let reply;
+            try { reply = await getBotReply(text); } catch(e) { reply = "I'm having trouble processing that right now. Please try again! 🙏"; }
+            document.getElementById('typingIndicator')?.remove();
             addMessage(reply, false);
             chatInput.disabled = false;
             chatInput.focus();
         }
-        
-        document.getElementById('chatToggleBtn').addEventListener('click', () => {
-            document.getElementById('chatWindow').classList.toggle('open');
-        });
-        document.getElementById('closeChatBtn').addEventListener('click', () => {
-            document.getElementById('chatWindow').classList.remove('open');
-        });
+        chatToggleBtn.addEventListener('click', () => { chatWindow.classList.toggle('open'); });
+        closeChatBtn.addEventListener('click', () => { chatWindow.classList.remove('open'); });
+        chatWidgetCloseBtn.addEventListener('click', (e) => { e.stopPropagation(); chatWidget.style.display = 'none'; });
         document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
-        chatInput.addEventListener('keypress', (e) => { 
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendChatMessage();
-            }
-        });
-
-        // Initialize
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } });
+        chatInput.addEventListener('paste', (e) => { e.preventDefault(); const pastedText = (e.clipboardData || window.clipboardData).getData('text'); const cleanText = pastedText.replace(/<[^>]*>/g, ''); chatInput.value = cleanText.substring(0,500); });
         loadTrainingData();
         setupRealtimeProducts();
         renderCartItems();
         updateCartCount();
-        
         setInterval(loadTrainingData, 300000);
     </script>
 </body>
